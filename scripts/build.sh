@@ -12,6 +12,6 @@ npm run build
 
 if [ "$UPDATE_BUILD_ARTIFACTS" = "true" ]; then
     git add -u
-    git commit -m "Updating bundles from ${TRAVIS_JOB_NUMBER}"
+    git commit -m "Updating bundles from ${TRAVIS_JOB_NUMBER}" --author="Deployment Bot (from Travis CI) <deploy@travis-ci.org>"
     git push
 fi
