@@ -10,8 +10,8 @@ function replaceAt(base: string, index: number, character: string): string {
 
 /*
 Converts a date representing time in milliseconds to a string with the format H hours M minutes and S seconds
-e.g.    10000 -> "0 hours 0 minutes and 10 seconds"
-        120000 -> "0 0 hours 2 minutes and 0 seconds"
+e.g.    10000 -> "10 seconds"
+        120000 -> "2 minutes and 0 seconds"
 */
 function convertTimeMsToTimeElapsedString(time: number): string {
     const millisecondsPerSecond: number = 1000;
@@ -39,7 +39,7 @@ function convertTimeMsToTimeElapsedString(time: number): string {
     if (days > 0) {res += `${days} days `; }
     if (hours > 0) {res += `${hours} hours `; }
     if (minutes > 0) {res += `${minutes} minutes `; }
-    res += `${seconds} seconds `;
+    res += `${seconds} seconds`;
 
     return res;
 }

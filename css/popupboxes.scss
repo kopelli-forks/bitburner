@@ -3,7 +3,7 @@
 
 /* Pop-up boxes */
 .popup-box-container {
-    display: none; /* Hidden by default */
+    display: none; /* Initially hidden */
     position: fixed; /* Stay in place */
     z-index: 10; /* Sit on top */
     left: 0;
@@ -22,16 +22,6 @@
     border: 5px solid var(--my-highlight-color);
     width: 70%;
     max-height: 80%;
-    /*
-    margin: auto;
-    height:auto;
-    max-height:80%;
-    position:absolute;
-    top:0;
-    left:0;
-    bottom:0;
-    right:0;
-    */
     overflow-y: auto;
     color: var(--my-font-color);
 }
@@ -73,7 +63,7 @@
     z-index: 10;
     width: 50%;
     height: auto;
-    max-height: 40%;
+    max-height: 50%;
     top: 40%;
     left: 50%;
     margin: -10% 0 0 -25%;

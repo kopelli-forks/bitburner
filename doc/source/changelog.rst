@@ -3,6 +3,431 @@
 Changelog
 =========
 
+v0.47.2 - 7/15/2019
+-------------------
+
+**Netscript Changes**
+
+* Added tail() Netscript function
+* hacknet.getNodeStats() function now returns an additional property for Hacknet Servers: hashCapacity
+* When writing to a file, the write() function now casts the data being written to a string (using String())
+* BitNode-selection page now shows what Source-File level you have for each BitNode
+* Overloaded kill() function so that you can kill a script by its PID
+* spawn() now only takes 10 seconds to run (decreased from 20 seconds)
+* run() and exec() now return the PID of the newly-executed scripts, rather than a boolean
+    * (A PID is just a positive integer)
+* run(), exec(), and spawn() no longer need to be await-ed in NetscriptJS
+* Script parsing and RAM calculations now support ES9
+* installAugmentations() no longer has a return value since it causes all scripts to die
+* isBusy() now returns true if you are in a Hacking Mission
+* Bug fix: workForFaction() function now properly accounts for disabled logs
+* Bug fix: RAM should now be properly calculated when running a callback script with installAugmentations()
+* Bug fix: Fixed bug that caused scripts killed by exit()/spawn() to "clean up" twice
+
+**Misc Changes**
+
+* The 'kill' Terminal command can now kill a script by its PID
+* Added 'Solarized Dark' theme to CodeMirror editor
+* After Infiltration, you will now return to the company page rather than the city page
+* Bug fix: Stock Market UI should no longer crash for certain locale settings
+* Bug fix: You can now properly remove unfinished programs (the *.exe-N%-INC files)
+* Bug fix: Fixed an issue that allowed you to increase money on servers with a 'maxMoney' of 0 (like CSEC)
+* Bug fix: Scripts no longer persist if they were started with syntax/import errors
+* Bug fix: 'hack' and 'analyze' Terminal commands are now blocking
+* Bug fix: Exp earned by duplicate sleeves at universities/gyms now takes hash upgrades into account
+
+v0.47.1 - 6/27/2019
+-------------------
+* Stock Market changes:
+    * Transactions no longer influence stock prices (but they still influence forecast)
+    * Changed the way stocks behave, particularly with regard to how the stock forecast occasionally "flips"
+    * Hacking & growing a server can potentially affect the way the corresponding stock's forecast changes
+    * Working for a company positively affects the way the corresponding stock's forecast changes
+
+* Scripts now start/stop instantly
+* Improved performance when starting up many copies of a new NetscriptJS script (by Ornedan)
+* Improved performance when killing scripts
+* Dialog boxes can now be closed with the ESC key (by jaguilar)
+* NetscriptJS scripts should now be "re-compiled" if their dependencies change (by jaguilar)
+* write() function should now properly cause NetscriptJS scripts to "re-compile" (by jaguilar)
+
+v0.47.0 - 5/17/2019
+-------------------
+* Stock Market changes:
+    * Implemented spread. Stock's now have bid and ask prices at which transactions occur
+    * Large transactions will now influence a stock's price and forecast
+    * This "influencing" can take effect in the middle of a transaction
+    * See documentation for more details on these changes
+    * Added getStockAskPrice(), getStockBidPrice() Netscript functions to the TIX API
+    * Added getStockPurchaseCost(), getStockSaleGain() Netscript functions to the TIX API
+
+* Re-sleeves can no longer have the NeuroFlux Governor augmentation
+    * This is just a temporary patch until the mechanic gets re-worked
+
+* hack(), grow(), and weaken() functions now take optional arguments for number of threads to use (by MasonD)
+* codingcontract.attempt() now takes an optional argument that allows you to configure the function to return a contract's reward
+* Adjusted RAM costs of Netscript Singularity functions (mostly increased)
+* Adjusted RAM cost of codingcontract.getNumTriesRemaining() Netscript function
+* Netscript Singularity functions no longer cost extra RAM outside of BitNode-4
+* Corporation employees no longer have an "age" stat
+* Gang Wanted level gain rate capped at 100 (per employee)
+* Script startup/kill is now processed every 3 seconds, instead of 6 seconds
+* getHackTime(), getGrowTime(), and getWeakenTime() now return Infinity if called on a Hacknet Server
+* Money/Income tracker now displays money lost from hospitalizations
+* Exported saves now have a unique filename based on current BitNode and timestamp
+* Maximum number of Hacknet Servers decreased from 25 to 20
+* Bug Fix: Corporation employees stats should no longer become negative
+* Bug Fix: Fixed sleeve.getInformation() throwing error in certain scenarios
+* Bug Fix: Coding contracts should no longer generate on the w0r1d_d43m0n server
+* Bug Fix: Duplicate Sleeves now properly have access to all Augmentations if you have a gang
+* Bug Fix: getAugmentationsFromFaction() & purchaseAugmentation() functions should now work properly if you have a gang
+* Bug Fix: Fixed issue that caused messages (.msg) to be sent when refreshing/reloading the game
+* Bug Fix: Purchasing hash upgrades for Bladeburner/Corporation when you don't actually have access to those mechanics no longer gives hashes
+* Bug Fix: run(), exec(), and spawn() Netscript functions now throw if called with 0 threads
+* Bug Fix: Faction UI should now automatically update reputation
+* Bug Fix: Fixed purchase4SMarketData()
+* Bug Fix: Netscript1.0 now works properly for multiple 'namespace' imports (import * as namespace from "script")
+* Bug Fix: Terminal 'wget' command now correctly evaluates directory paths
+* Bug Fix: wget(), write(), and scp() Netscript functions now fail if an invalid filepath is passed in
+* Bug Fix: Having Corporation warehouses at full capacity should no longer freeze game in certain conditions
+* Bug Fix: Prevented an exploit that allows you to buy multiple copies of an Augmentation by holding the 'Enter' button
+* Bug Fix: gang.getOtherGangInformation() now properly returns a deep copy
+* Bug Fix: Fixed getScriptIncome() returning an undefined value
+* Bug Fix: Fixed an issue with Hacknet Server hash rate not always updating
+
+v0.46.3 - 4/20/2019
+-------------------
+* Added a new Augmentation: The Shadow's Simulacrum
+* Improved tab autocompletion feature in Terminal so that it works better with directories
+* Bug Fix: Tech vendor location UI now properly refreshed when purchasing a TOR router
+* Bug Fix: Fixed UI issue with faction donations
+* Bug Fix: The money statistics & breakdown should now properly track money earned from Hacknet Server (hashes -> money)
+* Bug Fix: Fixed issue with changing input in 'Minimum Path Sum in a Triangle' coding contract problem
+* Fixed several typos in various places
+
+v0.46.2 - 4/14/2019
+-------------------
+* Source-File 2 now allows you to form gangs in other BitNodes when your karma reaches a very large negative value
+    * (Karma is a hidden stat and is lowered by committing crimes)
+
+* Gang changes:
+    * Bug Fix: Gangs can no longer clash with themselve
+    * Bug Fix: Winning against another gang should properly reduce their power
+
+* Bug Fix: Terminal 'wget' command now works properly
+* Bug Fix: Hacknet Server Hash upgrades now properly reset upon installing Augs/switching BitNodes
+* Bug Fix: Fixed button for creating Corporations
+
+v0.46.1 - 4/12/2019
+-------------------
+* Added a very rudimentary directory system to the Terminal
+    * Details here: https://bitburner.readthedocs.io/en/latest/basicgameplay/terminal.html#filesystem-directories
+
+* Added numHashes(), hashCost(), and spendHashes() functions to the Netscript Hacknet Node API
+* 'Generate Coding Contract' hash upgrade is now more expensive
+* 'Generate Coding Contract' hash upgrade now generates the contract randomly on the server, rather than on home computer
+* The cost of selling hashes for money no longer increases each time
+* Selling hashes for money now costs 4 hashes (in exchange for $1m)
+* Bug Fix: Hacknet Node earnings should work properly when game is inactive/offline
+* Bug Fix: Duplicate Sleeve augmentations are now properly reset when switching to a new BitNode
+
+v0.46.0 - 4/3/2019
+------------------
+* Added BitNode-9: Hacktocracy
+* Changed BitNode-11's multipliers to make it slightly harder overall
+* Source-File 11 is now slightly stronger
+* Added several functions to Netscript Sleeve API for buying Sleeve augmentations (by hydroflame)
+* Added a new stat for Duplicate Sleeves: Memory
+* Increase baseline experience earned from Infiltration, but it now gives diminishing returns (on exp) as you get to higher difficulties/levels
+* In Bladeburner, stamina gained from Hyperbolic Regeneration Chamber is now a percentage of your max stamina
+
+* Corporation Changes:
+    * 'Demand' value of products decreases more slowly
+    * Bug Fix: Fixed a Corporation issue that broke the Market-TA2 Research
+    * Bug Fix: Issuing New Shares now works properly
+
+* Bug Fix: Money Statistics tracker was incorrectly recording profits when selling stocks manually
+* Bug Fix: Fixed an issue with the job requirement tooltip for security jobs
+
+v0.45.1 - 3/23/2019
+-------------------
+* Added two new Corporation Researches
+* General UI improvements (by hydroflame and koriar)
+* Bug Fix: Sleeve Netscript API should no longer cause Dynamic RAM errors
+* Bug Fix: sleeve.getSleeveStats() should now work properly
+
+v0.45.0 - 3/22/2019
+-------------------
+* Corporation changes:
+    * Decreased the time of a full market cycle from 15 seconds to 10 seconds.
+    * This means that each Corporation 'state' will now only take 2 seconds, rather than 3
+    * Increased initial salaries for newly-hired employees
+    * Increased the cost multiplier for upgrading office size (the cost will increase faster)
+    * The stats of your employees now has a slightly larger effect on production & sales
+    * Added several new Research upgrades
+    * Market-TA research now allows you to automatically set sale price at optimal values
+    * Market-TA research now works for Products (not just Materials)
+    * Reduced the amount of Scientific Research needed to unlock the Hi-Tech R&D Laboratory from 10k to 5k
+    * Energy Material requirement of the Software industry reduced from 1 to 0.5
+    * It is now slightly easier to increase the Software industry's production multiplier
+    * Industries now have a maximum number of allowed products, starting at 3. This can be increased through research.
+    * You can now see an approximation of how each material affects an industry's production multiplier by clicking the "?" help tip next to it
+    * Significantly changed the effects of the different employee positions. See updated descriptions
+    * Reduced the amount of money you gain from private investors
+    * Training employees is now 3x more effective
+    * Bug Fix: An industry's products are now properly separated between different cities
+
+* The QLink Augemntation is now significantly stronger, but also significantly more expensive (by hydroflame)
+* Added a Netscript API for Duplicate Sleeves (by hydroflame)
+* Modified the multipliers of BitNode-3 and BitNode-8 to make them slightly harder
+* After installing Augmentations, Duplicate Sleeves will now default to Synchronize if their Shock is 0
+* Bug Fix: Bladeburner's Hyperbolic Regeneration Chamber should no longer instantly refill all stamina
+* Bug Fix: growthAnalyze() function now properly accounts for BitNode multipliers
+* Bug Fix: The cost of purchasing Augmentations for Duplicate Sleeves no longer scales with how many Augs you've purchased for yourself
+
+v0.44.1 - 3/4/2019
+------------------
+* Duplicate Sleeve changes:
+    * You can now purchase Augmentations for your Duplicate Sleeves
+    * Sleeves are now assigned to Shock Recovery task by default
+    * Shock Recovery and Synchronize tasks are now twice as effective
+
+* Changed documentation so that Netscript functions are own their own pages. Sorry if this is annoying, it was necessary for properly cross-referencing
+* Officially deprecated the Wiki (the fandom site). Use the 'readthedocs' Documentation instead
+* Bug Fix: 'rm' Terminal and Netscript commands now work on non-program files that have '.exe' in the name (by Github user MasonD)
+* Bug Fix: The 'Find All Valid Math Expressions' Coding Contract should now properly ignore whitespace in answers
+* Bug Fix: The 'Merge Overlapping Intervals' Coding Contract should now properly accept 2D arrays when being attempted through Netscript
+
+v0.44.0 - 2/26/2019
+-------------------
+* Bladeburner Changes:
+    * Reduced the amount of rank needed to earn a skill point
+    * Reduced the effects of the "Reaper" and "Evasive System" skills
+    * Increased the effect of the "Hyperdrive" and "Hands of Midas" skills
+    * Slightly increased the rate which the skill point cost rises for almost all skills
+    * The "Overlock" Skill now has a maximum level of 90 instead of 95
+    * Money earned from Contracts increased by 400%
+    * Changed the way population affects success rate. Extreme populations now have less dramatic effects
+    * Added two new General Actions: Diplomacy and Hyperbolic Regeneration Chamber
+    * Lowered the rep and money cost of the "Blade's Simulacrum" augmentation
+    * Significantly decreased the initial  amount of Contracts/Operations (the "Contracts/Operations remaining" value)
+    * Decreased the rate at which the amount of Contracts/Operations increases over time
+    * Decreased the number of successes you need to increase the max level of a Contract/Operation
+    * Increased the average number of Synthoid communities each city has
+    * Reduced the amount by which a successful raid will decrease the population of a city
+    * The "riots" event will now increase the chaos of a city by a greater amount
+    * Significantly increased the effect that Agility and Dexterity have on action time
+* Added new BitNode multipliers:
+    * HomeComputerRamCost - Affects how much it costs to upgrade home computer's RAM
+    * DaedalusAugsRequirement - Affects how many Augmentations you need in order to get invited to Daedalus
+    * FourSigmaMarketDataCost - Affects how much it costs to unlock the stock market's 4S Market Data
+    * FourSigmaMarketDataApiCost - Affects how much it costs to unlock the stock market's 4S Market Data API
+* A few minor changes to BitNode multipliers across the board (mostly for the new multipliers)
+* 'The Covenant' now requires 20 total Augmentations to get invited, rather than 30
+* You can now purchase permanent Duplicate Sleeves from 'The Covenant'. This requires Source-File 10, and you must be in BN-10 or after
+* You can now track where all of your money comes from in the 'Stats' page
+* Increased the money gained from Coding Contracts by 50%
+* getCharacterInformation() function now returns the player's HP and max HP
+* Bug Fix: You can no longer disconnect the enemy's connections in Hacking Missions
+* Bug Fix: Duplicate Sleeve faction reputation gain is now properly affected by faction favor
+* Bug Fix: After installing Augmentations, the Terminal display will now correctly show the current server as "home"
+* Bug Fix: Fixed an exploit where you could change the duration of timed functions (e.g. hack, weaken) in NetscriptJS
+* Bug Fix: You should now properly be able to use the ServerProfile.exe program
+* Bug Fix: Prevented exploit that allowed you to accept faction invites programmatically through NetscriptJS
+* Bug Fix: Faction invitations for megacorporations should now work properly
+
+v0.43.1 - 2/11/2019
+-------------------
+* Terminal changes:
+    * Quoted arguments are now properly parsed. (e.g. 'run f.script "this is one argument"' will be correctly parsed)
+    * Errors are now shown in red text
+    * 'unalias' command now has a different format and no longer needs the quotations
+    * Bug Fix: Fixed several edge cases where autocomplete wasn't working properly
+
+* Added two new Bladeburner skills for increasing money and experience gain
+* Made some minor adjustments to Bladeburner UI
+* Corporation "Smart Factories" and "Smart Storage" upgrades have slightly lower price multipliers
+* Added nFormat Netscript function
+* Added 6 new Coding Contract problems
+* Updated documentation with list of all Coding Contract problems
+* Minor improvements for 'Active Scripts' UI
+* Implemented several optimizations for active scripts. The game should now use less memory and the savefile should be slightly smaller when there are many scripts running
+* Bug Fix: A Stock Forecast should no longer go above 1 (i.e. 100%)
+* Bug Fix: The cost of Resleeves should no longer be affected by buying Augs
+* Bug Fix: Duplicate Sleeves now use their own stats to determine crime success rate, instead of the host consciousness' stats
+* Bug Fix: You can now call the prompt() Netscript function from multiple scripts simultaneously
+
+
+v0.43.0 - 2/4/2019
+------------------
+
+* Added BitNode-10: Digital Carbon
+
+* Stock Market Changes:
+    * Each stock now has a maximum number of shares you can purchase (both Long and Short positions combined)
+    * Added getStockMaxShares() Netscript function to the TIX API
+    * The cost of 4S Market Data TIX API Access increased from $20b to $25b
+
+* Job Changes:
+    * You can now hold multiple jobs at once. This means you no longer lose reputation when leaving a company
+    * Because of this change, the getCharacterInformation() Netscript function returns a slightly different value
+
+* Script Editor Changes:
+    * Added new script editor: CodeMirror. You can choose between the old editor (Ace) or CodeMirror
+    * Navigation keyboard shortcuts no longer work if the script editor is focused
+
+* Trying to programmatically run a script (run(), exec()) with a 'threads' argument of 0 will now cause the function to return false without running the script
+* Home Computer RAM is now capped at 2 ^ 30 GB (1073741824 GB)
+* The maximum amount, maximum RAM, and cost of purchasing servers can now vary between different BitNodes (new BitNode multipliers)
+* Pop-up dialog boxes are a little bit bigger
+* Bug Fix: When importing scripts, "./" will now be properly ignored (e.g. import { foo } from "./lib.script" )
+
+v0.42.0 - 1/8/2019
+------------------
+
+* Corporation Changes:
+    * Corporation can now be self-funded with $150b or using seed money in exchange for 500m newly-issued shares
+    * In BitNode-3, you no longer start with $150b
+    * Changed initial market prices for many materials
+    * Changed the way a material's demand, competition, and market price change over time
+    * The sale price of materials can no longer be marked-up as high
+    * Added a Research Tree mechanic. Spend Scientific Research on permanent upgrades for each industry
+    * You can now redistribute earnings to shareholders (including yourself) as dividends
+    * Cost of "Smart Supply" upgraded reduced from $50b to $25b
+    * Now has offline progress, which works similarly to the Gang/Bladeburner mechanics
+    * Slightly reduced the amount of money offered to you by investment firms
+    * Employee salaries now slowly increase over time
+    * Slightly reduced the effect "Real Estate" has on the Production Multiplier for the Agriculture industry
+    * Changed the way your Corporation's value is calculated (this is what determines stock price)
+    * After taking your corporation public, it is now possible to issue new shares to raise capital
+    * Issuing new shares can only be done once every 12 hours
+    * Buying back shares must now be done at a premium
+    * Selling shares can now only be done once per hour
+    * Selling large amounts of shares now immediately impacts stock price (during the transaction)
+    * Reduced the initial cost of the DreamSense upgrade from $8b to $4b, but increased its price multiplier
+    * Reduced the price multiplier for ABC SalesBots upgrade
+
+* Added getOrders() Netscript function to the TIX API
+* Added getAugmentationPrereq() Singularity function (by havocmayhem)
+* Added hackAnalyzePercent() and hackAnalyzeThreads() Netscript functions
+* Stock Market, Travel, and Corporation main menu links are now properly styled
+* Many pop-up/dialog boxes now support the 'Enter' and 'Esc' hotkeys. If you find a pop-up/dialog box that doesnt support this, let me know specifically which one ('Enter' for the default option, 'Esc' for cancelling and closing the pop-up box)
+* Added "brace_style = preserve_inline" configuration to Script Editor Beautifier
+* ServerProfiler.exe can now be purchased from the Dark Web
+* Added an option to copy save data to clipboard
+* Added total multiplier information on the "Augmentations" page
+* Bug Fix: gymWorkout() Singularity function should now work properly with Millenium Fitness Gym
+* Began migrating gameplay information to the ReadTheDocs documentation
+
+v0.41.2 - 11/23/2018
+--------------------
+* IMPORTANT - Netscript Changes:
+    * rm() now takes an optional parameter that lets you specify on which server to delete the file
+    * Added growthAnalyze() Netscript function
+
+* Gang Changes:
+    * UI now displays your chance to win a clash with other gangs
+    * Added getChanceToWinClash() function to the Gang API
+    * Added getEquipmentType() function to the Gang API
+    * Added several new hacking-based equipment and Augmentations
+    * Rebalanced several equipment/upgrades to give less defense
+    * Wanted level gain rate is now be slightly higher for all tasks
+    * Rebalanced parameters for "hacking" tasks
+
+* Added new Main Menu configuration in .fconf: "compact"
+* Added the terminal command 'expr', which can be used to evaluate simple mathematical expressions
+* Bug Fix: Can no longer purchase duplicate equipment/Augmentations through gang.purchaseEquipment()
+* Bug Fix: scp() should no longer throw errors when used with 2-arguments and an array of files
+* Bug Fix: Coding Contracts no longer give money in BitNode-8
+* Bug Fix: In Bladeburner, you can no longer start a BlackOp through the Netscript API if it has already been completed
+* Bug Fix: In Bladeburner, fixed a bug which caused the configured 'automate' actions to occasionally be switched to other actions
+* Bug Fix: 'Return to World' button at locations no longer accumulates event listeners
+* Bug Fix: Working & taking classes now continuously add/subtract money during the action, instead of doing it at completion
+* Bug Fix: Top-right overview panel now displays negative money using '-' instead of '()'
+* Bug Fix: Stock Market UI should no longer show 'NaN' profit immediately after buying a stock
+
+v0.41.1 - 11/5/2018
+-------------------
+* IMPORTANT - Netscript Changes:
+    * purchaseTor() now returns true if you already have a TOR router (it used to return false)
+    * getPurchasedServerCost() now returns Infinity if the specified RAM is an invalid amount or is greater than the max amount of RAM (2 ^ 20 GB)
+    * Added purchase4SMarketData() and purchase4SMarketDataTixApi() functions
+    * getScriptLogs() now takes in optional arguments that let you get the logs of another script
+
+* Stock Market changes:
+    * Stocks now have "maximum prices". These are hidden from the player
+    * If a stock reaches its "maximum price", it will most likely drop in value (although it might still rise)
+    * Each stock has its own, unique maximum price
+    * Maximum price for each stock are randomly generated and change during each 'reset'
+    * Stock Market cycles are now accumulated/stored, much like it is for Gangs and Bladeburners
+    * Accumulated/stored cycles cause stock prices to update up to 50% faster (from every 6 seconds to 4 seconds)
+        * This means that after coming back from being offline, stock prices will update faster to make up for offline time
+
+* Decreased the Hacking Level multiplier for BitNodes 6 and 7 to 0.4 (from 0.5)
+* Bladeburner console history is now saved and persists when switching screens or closing/reopening the game
+* In Bladeburner, if your stamina reaches 0 your current action will be cancelled
+* b1t_flum3.exe is no longer removed from your home computer upon reset
+* Added main menu link for the Stock Market (once you've purchased an account)
+* Job main menu link only appears if you actually have a job
+* Bug Fix: Netscript Gang API functions purchaseEquipment() and ascendMember() should now work properly
+* Bug Fix: After installing Augs, the "Portfolio Mode" button on the Stock Market page should be properly reset
+* Bug Fix: bladeburner.getActionCountRemaining()'s return value is now rounded down (by Kline-)
+
+v0.41.0 - 10/29/2018
+--------------------
+* WARNING: In NetscriptJS, defining a function called print() is no longer possible
+* Gang Mechanic Changes (BitNode-2):
+    * Added a Gang Netscript API
+    * Added new 'ascension' mechanic for Gang Members
+    * The first three gang members are now 'free' (can be recruited instantly)
+    * Maximum number of increased Gang Members increased from 20 to 30
+    * Changed the formula for calculating respect needed to recruit the next gang member
+    * Added a new category of upgrades for Gang Members: Augmentations
+    * Non-Augmentation Gang member upgrades are now significantly weaker
+    * Reputation for your Gang faction can no longer be gained through Infiltration
+    * Re-worked the territory 'warfare' mechanic so that player can choose when to engage in it
+    * Gang Members can now be killed during territory 'warfare'
+    * Changed BitNode-2 Multipliers to make hacking slightly less profitable
+    * Gang Member Equipment + Upgrades now get cheaper as your gang grows in power and respect
+    * The effects of Source-File 2 are now slightly more powerful
+* RAM Cost of accessing the global document object lowered from 100 GB to 25 GB
+* RAM Cost to use Singularity Functions outside of BitNode-4 lowered by 75%. They now only cost twice as much as they do in BitNode-4
+* b1t_flum3.exe now takes significantly less time to create
+* Crimes commited through Singularity function no longer give half money/exp (there is now no penalty)
+* Improved number formatting for Player 'work' actions (including crimes, etc.). These numbers should also adhere to locale settings now (by Kline-)
+* The order that Augmentations are listed in (when purchasing from Faction and viewing your Augmentations) is now saved and persists when choosing different orders
+* getCharacterInformation() Singularity function now returns multiplier information (from Augmentations/Source Files)
+* Bug Fix: Calling print() in NetscriptJS no longer brings up the print dialog
+* Bug Fix: Fixed a bug that sometimes caused a blank black screen when destroying/resetting/switching BitNodes
+* Bug Fix: Netscript calls that throw errors will now no longer cause the 'concurrent calls' error if they are caught in the script. i.e. try/catch should now work properly in scripts
+* Bug Fix: Fixed a bug where sometimes the NeuroFlux Governor Augmentation level would be incorrectly calculated when the game was loaded
+* Bug Fix: Fixed a bug where calling the scp() Netscript function with invalid hostname/ips would throw an unclear error message
+* Bug Fix: Bladeburner API function getActionCountRemaining() should now work properly for BlackOps
+* Bug Fix: Black Ops can no longer be attempted out-of-order or without the required rank via Bladeburner API
+* Bug Fix: Dynamic RAM Calculation now properly accounts for number of threads
+* RAM cost for basic Netscript functions added to documentation (by CBJamo)
+
+v0.40.5 - 10/09/2018
+--------------------
+* Added codingcontract.getContractType() Netscript function
+* Bug Fix: codingcontract.getData() Netscript function now returns arrays by value rather than reference
+* Bug Fix: Decreased highest possible data value for 'Find Largest Prime Factor' Coding Contract (to avoid hangs when solving it)
+* Bug Fix: Fixed a bug that caused game to freeze during Coding Contract generation
+
+v0.40.4 - 9/29/2018
+-------------------
+* Added new Coding Contracts mechanic. Solve programming problems to earn rewards
+* The write() and read() Netscript functions now work on scripts
+* Added getStockSymbols() Netscript function to the TIX API (by InfraK)
+* Added wget() Netscript function
+* Added bladeburner.getActionRepGain() function to the Netscript Bladeburner API
+* The getLevelUpgradeCost(), getRamUpgradeCost(), and getCoreUpgradeCost() functions in the Hacknet API now return Infinity if the node is at max level. See documentation
+* It is now possible to use freely use angled bracket (<, >) and create DOM elements using tprint()
+* The game's theme colors can now be set through the Terminal configuration (.fconf).
+* You can now switch to the old left-hand main menu bar through the Terminal configuration (.fconf)
+* Bug Fix: grow() percentage is no longer reported as Infinity when a server's money is grown from 0 to X
+* Bug Fix: Infiltration popup now displays the correct amount of exp gained
+
 v0.40.3 - 9/15/2018
 -------------------
 * Bladeburner Changes:

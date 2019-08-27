@@ -1,38 +1,48 @@
-/* Pop up Dialog Box */
+import { KEY } from "./helpers/keyCodes";
+
+/**
+ * Create and display a pop-up dialog box.
+ * This dialog box does not allow for any interaction and should close when clicking
+ * outside of it
+ */
 let dialogBoxes = [];
 
-//Close dialog box when clicking outside
+// Close dialog box when clicking outside
 $(document).click(function(event) {
     if (dialogBoxOpened && dialogBoxes.length >= 1) {
         if (!$(event.target).closest(dialogBoxes[0]).length){
-            dialogBoxes[0].remove();
-            dialogBoxes.splice(0, 1);
-            if (dialogBoxes.length == 0) {
-                dialogBoxOpened = false;
-            } else {
-                dialogBoxes[0].style.visibility = "visible";
-            }
+            closeTopmostDialogBox();
         }
     }
 });
 
+function closeTopmostDialogBox() {
+    if (!dialogBoxOpened || dialogBoxes.length === 0) return;
+    dialogBoxes[0].remove();
+    dialogBoxes.shift();
+    if (dialogBoxes.length == 0) {
+        dialogBoxOpened = false;
+    } else {
+        dialogBoxes[0].style.visibility = "visible";
+    }
+}
 
-//Dialog box close buttons
+// Dialog box close buttons
 $(document).on('click', '.dialog-box-close-button', function( event ) {
-    if (dialogBoxOpened && dialogBoxes.length >= 1) {
-        dialogBoxes[0].remove();
-        dialogBoxes.splice(0, 1);
-        if (dialogBoxes.length == 0) {
-            dialogBoxOpened = false;
-        } else {
-            dialogBoxes[0].style.visibility = "visible";
-        }
+    closeTopmostDialogBox();
+});
+
+document.addEventListener("keydown", function (event) {
+    if (event.keyCode == KEY.ESC && dialogBoxOpened) {
+        closeTopmostDialogBox();
+        event.preventDefault();
     }
 });
 
-var dialogBoxOpened = false;
+let dialogBoxOpened = false;
 
 function dialogBoxCreate(txt, preformatted=false) {
+    console.log(`dialogBoxCreate() called`)
     var container = document.createElement("div");
     container.setAttribute("class", "dialog-box-container");
 

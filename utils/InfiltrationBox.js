@@ -1,10 +1,12 @@
-import {BitNodeMultipliers}                 from "../src/BitNodeMultipliers";
-import {CONSTANTS}                          from "../src/Constants";
-import {Factions, Faction}                  from "../src/Faction";
-import {Player}                             from "../src/Player";
-import {dialogBoxCreate}                    from "./DialogBox";
-import {clearEventListeners}                from "./uiHelpers/clearEventListeners";
-import {formatNumber}                       from "./StringHelperFunctions";
+import { dialogBoxCreate }          from "./DialogBox";
+import { clearEventListeners }      from "./uiHelpers/clearEventListeners";
+import { formatNumber }             from "./StringHelperFunctions";
+
+import { BitNodeMultipliers }       from "../src/BitNode/BitNodeMultipliers";
+import { CONSTANTS }                from "../src/Constants";
+import { Faction }                  from "../src/Faction/Faction";
+import { Factions }                 from "../src/Faction/Factions";
+import { Player }                   from "../src/Player";
 
 //Keep track of last faction
 var lastFac = "";
@@ -17,7 +19,7 @@ function infiltrationBoxClose() {
 
 function infiltrationBoxOpen() {
     var box = document.getElementById("infiltration-box-container");
-    box.style.display = "block";
+    box.style.display = "flex";
 }
 
 function infiltrationSetText(txt) {
@@ -28,14 +30,21 @@ function infiltrationSetText(txt) {
 //ram argument is in GB
 function infiltrationBoxCreate(inst) {
     //Gain exp
-    var expMultiplier = 2 * inst.clearanceLevel / inst.maxClearanceLevel;
-    Player.gainHackingExp(inst.hackingExpGained * expMultiplier);
-    Player.gainStrengthExp(inst.strExpGained * expMultiplier);
-    Player.gainDefenseExp(inst.defExpGained * expMultiplier);
-    Player.gainDexterityExp(inst.dexExpGained * expMultiplier);
-    Player.gainAgilityExp(inst.agiExpGained * expMultiplier);
-    Player.gainCharismaExp(inst.chaExpGained * expMultiplier);
-    Player.gainIntelligenceExp(inst.intExpGained * expMultiplier);
+    Player.gainHackingExp(inst.calcGainedHackingExp());
+    Player.gainStrengthExp(inst.calcGainedStrengthExp());
+    Player.gainDefenseExp(inst.calcGainedDefenseExp());
+    Player.gainDexterityExp(inst.calcGainedDexterityExp());
+    Player.gainAgilityExp(inst.calcGainedAgilityExp());
+    Player.gainCharismaExp(inst.calcGainedCharismaExp());
+    Player.gainIntelligenceExp(inst.calcGainedIntelligenceExp());
+
+    const expGainText = ["You gained:",
+                         `${formatNumber(inst.calcGainedHackingExp(), 3)} hacking exp`,
+                         `${formatNumber(inst.calcGainedStrengthExp(), 3)} str exp`,
+                         `${formatNumber(inst.calcGainedDefenseExp(), 3)} def exp`,
+                         `${formatNumber(inst.calcGainedDexterityExp(), 3)} dex exp`,
+                         `${formatNumber(inst.calcGainedAgilityExp(), 3)} agi exp`,
+                         `${formatNumber(inst.calcGainedCharismaExp(), 3)} cha exp`].join("\n");
 
     var totalValue = 0;
     for (var i = 0; i < inst.secretsStolen.length; ++i) {
@@ -43,14 +52,7 @@ function infiltrationBoxCreate(inst) {
     }
     if (totalValue == 0) {
         dialogBoxCreate("You successfully escaped the facility but you did not steal " +
-                        "anything of worth when infiltrating.<br><br>" +
-                        "You gained:<br>" +
-                        formatNumber(inst.hackingExpGained, 3) + " hacking exp<br>" +
-                        formatNumber(inst.strExpGained, 3) + " str exp<br>" +
-                        formatNumber(inst.defExpGained, 3) + " def exp<br>" +
-                        formatNumber(inst.dexExpGained, 3) + " dex exp<br>" +
-                        formatNumber(inst.agiExpGained, 3) + " agi exp<br>" +
-                        formatNumber(inst.chaExpGained, 3) + " cha exp<br>");
+                        "anything of worth when infiltrating.<br><br>" + expGainText);
         return;
     }
     var facValue = totalValue * Player.faction_rep_mult *
@@ -64,7 +66,8 @@ function infiltrationBoxCreate(inst) {
     var selector = document.getElementById("infiltration-faction-select");
     selector.innerHTML = "";
     for (let i = 0; i < Player.factions.length; ++i) {
-        if (Player.factions[i] === "Bladeburners") {continue;}
+        if (Player.factions[i] === "Bladeburners") { continue; }
+        if (Player.inGang() && Player.gang.facName === Player.factions[i]) { continue; }
         selector.innerHTML += "<option value='" + Player.factions[i] +
                                "'>" + Player.factions[i] + "</option>";
     }
@@ -84,15 +87,10 @@ function infiltrationBoxCreate(inst) {
     sellButton.addEventListener("click", function(e) {
         if (!e.isTrusted) {return false;}
         Player.gainMoney(moneyValue);
+        Player.recordMoneySource(moneyValue, "infiltration");
         dialogBoxCreate("You sold the classified information you stole from " + inst.companyName +
                         " for <span class='money-gold'>$" + formatNumber(moneyValue, 2) + "</span> on the black market!<br><br>" +
-                        "You gained:<br>" +
-                        formatNumber(inst.hackingExpGained, 3) + " hacking exp<br>" +
-                        formatNumber(inst.strExpGained, 3) + " str exp<br>" +
-                        formatNumber(inst.defExpGained, 3) + " def exp<br>" +
-                        formatNumber(inst.dexExpGained, 3) + " dex exp<br>" +
-                        formatNumber(inst.agiExpGained, 3) + " agi exp<br>" +
-                        formatNumber(inst.chaExpGained, 3) + " cha exp<br>");
+                        expGainText);
         infiltrationBoxClose();
         return false;
     });
@@ -112,13 +110,7 @@ function infiltrationBoxCreate(inst) {
         faction.playerReputation += facValue;
         dialogBoxCreate("You gave the classified information you stole from " + inst.companyName +
                         " to " + facName + " and gained <span class='light-yellow'>" + formatNumber(facValue, 3) + " reputation</span> with the faction. <br><br>" +
-                        "You gained:<br>" +
-                        formatNumber(inst.hackingExpGained, 3) + " hacking exp<br>" +
-                        formatNumber(inst.strExpGained, 3) + " str exp<br>" +
-                        formatNumber(inst.defExpGained, 3) + " def exp<br>" +
-                        formatNumber(inst.dexExpGained, 3) + " dex exp<br>" +
-                        formatNumber(inst.agiExpGained, 3) + " agi exp<br>" +
-                        formatNumber(inst.chaExpGained, 3) + " cha exp<br>");
+                        expGainText);
         infiltrationBoxClose();
         return false;
     });

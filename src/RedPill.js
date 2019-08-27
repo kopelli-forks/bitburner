@@ -1,24 +1,29 @@
-import {BitNodes}                               from "./BitNode";
-import {Engine}                                 from "./engine";
-import {Player}                                 from "./Player";
-import {prestigeSourceFile}                     from "./Prestige";
-import {SourceFiles, SourceFile,
-        PlayerOwnedSourceFile}                  from "./SourceFile";
-import {Terminal}                               from "./Terminal";
+/**
+ * Implementation for what happens when you destroy a BitNode
+ */
+import { BitNodes } from "./BitNode/BitNode";
+import { Engine } from "./engine";
+import { Player } from "./Player";
+import { prestigeSourceFile } from "./Prestige";
+import { PlayerOwnedSourceFile } from "./SourceFile/PlayerOwnedSourceFile";
+import { SourceFileFlags } from "./SourceFile/SourceFileFlags";
+import { SourceFiles } from "./SourceFile/SourceFiles";
+import { Terminal } from "./Terminal";
+import { setTimeoutRef } from "./utils/SetTimeoutRef";
 
-import {clearEventListeners}                    from "../utils/uiHelpers/clearEventListeners";
-import {dialogBoxCreate}                        from "../utils/DialogBox";
-import {removeChildrenFromElement}              from "../utils/uiHelpers/removeChildrenFromElement";
-import {yesNoBoxCreate, yesNoBoxGetYesButton,
-        yesNoBoxGetNoButton, yesNoBoxClose}     from "../utils/YesNoBox";
+import { dialogBoxCreate } from "../utils/DialogBox";
+import {
+    yesNoBoxCreate,
+    yesNoBoxGetYesButton,
+    yesNoBoxGetNoButton,
+    yesNoBoxClose
+} from "../utils/YesNoBox";
+import { clearEventListeners } from "../utils/uiHelpers/clearEventListeners";
+import { removeChildrenFromElement } from "../utils/uiHelpers/removeChildrenFromElement";
 
-/* RedPill.js
- *  Implements what happens when you have Red Pill augmentation and then hack the world daemon */
-
-//Returns promise
+// Returns promise
 function writeRedPillLine(line) {
     return new Promise(function(resolve, reject) {
-
         var container = document.getElementById("red-pill-content");
         var pElem = document.createElement("p");
         container.appendChild(pElem);
@@ -34,7 +39,7 @@ function writeRedPillLine(line) {
 
 function writeRedPillLetter(pElem, line, i=0) {
     return new Promise(function(resolve, reject) {
-        setTimeout(function() {
+        setTimeoutRef(function() {
             if (i >= line.length) {
                 var textToShow = line.substring(0, i);
                 pElem.innerHTML = "> " + textToShow;
@@ -54,6 +59,10 @@ function writeRedPillLetter(pElem, line, i=0) {
 
 let redPillFlag = false;
 function hackWorldDaemon(currentNodeNumber, flume=false) {
+    // Clear Red Pill screen first
+    var container = document.getElementById("red-pill-content");
+    removeChildrenFromElement(container);
+
     redPillFlag = true;
     Engine.loadRedPillContent();
     return writeRedPillLine("[ERROR] SEMPOOL INVALID").then(function() {
@@ -91,8 +100,6 @@ function hackWorldDaemon(currentNodeNumber, flume=false) {
     });
 }
 
-//The bitNode name passed in will have a hyphen between number (e.g. BitNode-1)
-//This needs to be removed
 function giveSourceFile(bitNodeNumber) {
     var sourceFileKey = "SourceFile"+ bitNodeNumber.toString();
     var sourceFile = SourceFiles[sourceFileKey];
@@ -101,7 +108,7 @@ function giveSourceFile(bitNodeNumber) {
         return;
     }
 
-    //Check if player already has this source file
+    // Check if player already has this source file
     var alreadyOwned = false;
     var ownedSourceFile = null;
     for (var i = 0; i < Player.sourceFiles.length; ++i) {
@@ -124,7 +131,7 @@ function giveSourceFile(bitNodeNumber) {
     } else {
         var playerSrcFile = new PlayerOwnedSourceFile(bitNodeNumber, 1);
         Player.sourceFiles.push(playerSrcFile);
-        if (bitNodeNumber === 5) { //Artificial Intelligence
+        if (bitNodeNumber === 5) { // Artificial Intelligence
             Player.intelligence = 1;
         }
         dialogBoxCreate("You received a Source-File for destroying a Bit Node!<br><br>" +
@@ -132,15 +139,25 @@ function giveSourceFile(bitNodeNumber) {
     }
 }
 
+// Keeps track of what Source-Files the player will have AFTER the current bitnode
+// is destroyed. Updated every time loadBitVerse() is called
+let nextSourceFileFlags = [];
+
 function loadBitVerse(destroyedBitNodeNum, flume=false) {
-    //Clear the screen
-    var container = document.getElementById("red-pill-content");
+    // Clear the screen
+    const container = document.getElementById("red-pill-content");
     removeChildrenFromElement(container);
 
-    //Create the Bit Verse
-    var bitVerseImage = document.createElement("pre");
-    var bitNodes = [];
-    for (var i = 1; i <= 12; ++i) {
+    // Update NextSourceFileFlags
+    nextSourceFileFlags = SourceFileFlags.slice();
+    if (!flume) {
+        ++nextSourceFileFlags[destroyedBitNodeNum];
+    }
+
+    // Create the Bit Verse
+    const bitVerseImage = document.createElement("pre");
+    const bitNodes = [];
+    for (let i = 1; i <= 12; ++i) {
         bitNodes.push(createBitNode(i));
     }
 
@@ -171,64 +188,39 @@ function loadBitVerse(destroyedBitNodeNum, flume=false) {
     "         |       |    |  | |  |    |       |         <br>" +
     "          \\JUMP3R|JUMP|3R| |R3|PMUJ|R3PMUJ/          <br><br><br><br>";
 
-
-    /*
-    "                          O                          <br>" +
-    "             |  O  O      |      O  O  |             <br>" +
-    "        O    |  | /     __|       \ |  |    O        <br>" +
-    "      O |    O  | |  O /  |  O    | |  O    | O      <br>" +
-    "    | | |    |  |_/  |/   |   \_  \_|  |    | | |    <br>" +
-    "  O | | | O  |  | O__/    |   / \__ |  |  O | | | O  <br>" +
-    "  | | | | |  |  |   /    /|  O  /  \|  |  | | | | |  <br>" +
-    "O | | |  \|  |  O  /   _/ |    /    O  |  |/  | | | O<br>" +
-    "| | | |O  /  |  | O   /   |   O   O |  |  \  O| | | |<br>" +
-    "| | |/  \/  / __| | |/ \  |   \   | |__ \  \/  \| | |<br>" +
-    " \| O   |  |_/    |\|   \ O    \__|    \_|  |   O |/ <br>" +
-    "  | |   |_/       | |    \|    /  |       \_|   | |  <br>" +
-    "   \|   /          \|     |   /  /          \   |/   <br>" +
-    "    |  O            |     |  /  |            O  |    <br>" +
-    "  O |  |            |     |     |            |  | O  <br>" +
-    "  | |  |            /    / \    \            |  | |  <br>" +
-    "   \|  |           /  O /   \ O  \           |  |/   <br>" +
-    "    \  |          /  / |     | \  \          |  /    <br>" +
-    "     \ \JUMP O3R |  |  |     |  |  | R3O PMUJ/ /     <br>" +
-    "      \||    |   |  |  |     |  |  |   |    ||/      <br>" +
-    "       \|     \_ |  |  |     |  |  | _/     |/       <br>" +
-    "        \       \| /    \   /    \ |/       /        <br>" +
-    "         O       |/   O  | |  O   \|       O         <br>" +
-    "         |       |    |  | |  |    |       |         <br>" +
-    "          \JUMP3R|JUMP|3R| |R3|PMUJ|R3PMUJ/          <br>";
-    */
-
     container.appendChild(bitVerseImage);
 
-    //Bit node event listeners
-    for (var i = 1; i <= 12; ++i) {
+    // BitNode event listeners
+    for (let i = 1; i <= 12; ++i) {
         (function(i) {
-            var elemId = "bitnode-" + i.toString();
-            var elem = clearEventListeners(elemId);
-            if (elem == null) {return;}
-            if (i === 1 || i === 2 || i === 3 || i === 4 || i === 5 ||
-                i === 6 || i === 7 || i === 8 || i === 11 || i === 12) {
+            const elemId = "bitnode-" + i.toString();
+            const elem = clearEventListeners(elemId);
+            if (elem == null) { return; }
+            if (i >= 1 && i <= 12) {
                 elem.addEventListener("click", function() {
-                    var bitNodeKey = "BitNode" + i;
-                    var bitNode = BitNodes[bitNodeKey];
+                    const bitNodeKey = "BitNode" + i;
+                    const bitNode = BitNodes[bitNodeKey];
                     if (bitNode == null) {
-                        console.log("ERROR: Could not find BitNode object for number: " + i);
+                        console.error(`Could not find BitNode object for number: ${i}`);
                         return;
                     }
-                    yesNoBoxCreate("BitNode-" + i + ": " + bitNode.name + "<br><br>" + bitNode.info);
-                    createBitNodeYesNoEventListeners(i, destroyedBitNodeNum, flume);
+
+                    const maxSourceFileLevel = i === 12 ? "∞" : "3";
+                    const popupBoxText = `BitNode-${i}: ${bitNode.name}<br>` +
+                        `Source-File Level: ${nextSourceFileFlags[i]} / ${maxSourceFileLevel}<br><br>` +
+                        `${bitNode.info}`;
+                    yesNoBoxCreate(popupBoxText);
+                    createBitNodeYesNoEventListener(i, destroyedBitNodeNum, flume);
                 });
             } else {
                 elem.addEventListener("click", function() {
                     dialogBoxCreate("Not yet implemented! Coming soon!")
                 });
             }
-        }(i)); //Immediate invocation closure
+        }(i)); // Immediate invocation closure
     }
 
-    //Create lore text
+    // Create lore text
     return writeRedPillLine("Many decades ago, a humanoid extraterrestial species which we call the Enders descended on the Earth...violently").then(function() {
         return writeRedPillLine("Our species fought back, but it was futile. The Enders had technology far beyond our own...");
     }).then(function() {
@@ -277,38 +269,48 @@ function loadBitVerse(destroyedBitNodeNum, flume=false) {
 }
 
 
-//Returns string with DOM element for Bit Node
+// Returns string with DOM element for Bit Node
 function createBitNode(n) {
-    var bitNodeStr = "BitNode" + n.toString();
-    var bitNode = BitNodes[bitNodeStr];
-    if (bitNode == null) {return "O";}
-    return  "<a class='bitnode tooltip' id='bitnode-" + bitNode.number.toString() + "'><strong>O</strong>" +
-             "<span class='tooltiptext'>" +
-             "<strong>BitNode-" + bitNode.number.toString() + "<br>" + bitNode.name+ "</strong><br>" +
-             bitNode.desc + "<br>" +
-             "</span></a>";
+    const bitNodeStr = "BitNode" + n.toString();
+    const bitNode = BitNodes[bitNodeStr];
+    if (bitNode == null) { return "O"; }
+
+    const level = nextSourceFileFlags[n];
+    let cssClass;
+    if (n === 12 && level >= 2) {
+        // Repeating BitNode
+        cssClass = "level-2";
+    } else {
+        cssClass = `level-${level}`;
+    }
+
+    return  `<a class='bitnode ${cssClass} tooltip' id='bitnode-${bitNode.number}'><strong>O</strong>` +
+            "<span class='tooltiptext'>" +
+            `<strong>BitNode-${bitNode.number.toString()}<br>${bitNode.name}</strong><br>` +
+            `${bitNode.desc}<br>` +
+            "</span></a>";
 }
 
-function createBitNodeYesNoEventListeners(newBitNode, destroyedBitNode, flume=false) {
-    var yesBtn = yesNoBoxGetYesButton();
+function createBitNodeYesNoEventListener(newBitNode, destroyedBitNode, flume=false) {
+    const yesBtn = yesNoBoxGetYesButton();
     yesBtn.innerHTML = "Enter BitNode-" + newBitNode;
     yesBtn.addEventListener("click", function() {
         if (!flume) {
             giveSourceFile(destroyedBitNode);
         } else {
-            //If player used flume, subtract 5 int exp. The prestigeSourceFile()
-            //function below grants 5 int exp, so this allows sets net gain to 0
+            // If player used flume, subtract 5 int exp. The prestigeSourceFile()
+            // function below grants 5 int exp, so this allows sets net gain to 0
             Player.gainIntelligenceExp(-5);
         }
         redPillFlag = false;
-        var container = document.getElementById("red-pill-container");
+        var container = document.getElementById("red-pill-content");
         removeChildrenFromElement(container);
 
-        //Set new Bit Node
+        // Set new Bit Node
         Player.bitNodeN = newBitNode;
-        console.log("Entering Bit Node " + Player.bitNodeN);
+        console.log(`Entering Bit Node ${Player.bitNodeN}`);
 
-        //Reenable terminal
+        // Reenable terminal
         $("#hack-progress-bar").attr('id', "old-hack-progress-bar");
         $("#hack-progress").attr('id', "old-hack-progress");
         document.getElementById("terminal-input-td").innerHTML = '$ <input type="text" id="terminal-input-text-box" class="terminal-input" tabindex="1"/>';
@@ -319,7 +321,7 @@ function createBitNodeYesNoEventListeners(newBitNode, destroyedBitNode, flume=fa
         prestigeSourceFile();
         yesNoBoxClose();
     });
-    var noBtn = yesNoBoxGetNoButton();
+    const noBtn = yesNoBoxGetNoButton();
     noBtn.innerHTML = "Back";
     noBtn.addEventListener("click", function() {
         yesNoBoxClose();

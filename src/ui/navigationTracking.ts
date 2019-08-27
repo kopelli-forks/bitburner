@@ -29,11 +29,6 @@ export enum Page {
     HacknetNodes = "HacknetNodes",
 
     /**
-     * View the city the player is currently in.
-     */
-    World = "World",
-
-    /**
      * The list of programs the player could potentially build.
      */
     CreateProgram = "CreateProgram",
@@ -64,7 +59,7 @@ export enum Page {
     DevMenu = "Dev Menu",
 
     /**
-     * Information about the specific location the player at (job, company, etc.);
+     * Visiting a location in the world
      */
     Location = "Location",
 
@@ -112,6 +107,16 @@ export enum Page {
      * Manage special Bladeburner activities.
      */
     Bladeburner = "Bladeburner",
+
+    /**
+     * Manage your Sleeves
+     */
+    Sleeves = "Sleeves",
+
+    /**
+     * Purchase Resleeves
+     */
+    Resleeves = "Re-sleeving",
 }
 
 /**

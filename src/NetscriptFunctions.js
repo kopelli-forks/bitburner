@@ -1,81 +1,161 @@
-var sprintf = require('sprintf-js').sprintf,
-    vsprintf = require('sprintf-js').vsprintf
+const sprintf = require("sprintf-js").sprintf;
+const vsprintf = require("sprintf-js").vsprintf;
 
-import {updateActiveScriptsItems}                   from "./ActiveScriptsUI";
-import {Augmentations, Augmentation,
-        augmentationExists, installAugmentations,
-        AugmentationNames}                          from "./Augmentations";
-import {BitNodeMultipliers}                         from "./BitNodeMultipliers";
-import {determineCrimeSuccess, findCrime}           from "./Crimes";
-import {Bladeburner}                                from "./Bladeburner";
-import {Companies, Company, CompanyPosition,
-        CompanyPositions, companyExists}            from "./Company";
-import {CONSTANTS}                                  from "./Constants";
-import {Programs}                                   from "./CreateProgram";
-import {DarkWebItems}                               from "./DarkWeb";
-import {calculateHackingChance,
-        calculateHackingExpGain,
-        calculatePercentMoneyHacked,
-        calculateHackingTime,
-        calculateGrowTime,
-        calculateWeakenTime}                        from "./Hacking";
-import {AllGangs}                                   from "./Gang";
-import {Factions, Faction, joinFaction,
-        factionExists, purchaseAugmentation}        from "./Faction";
-import {getCostOfNextHacknetNode, purchaseHacknet}  from "./HacknetNode";
-import {Locations}                                  from "./Locations";
-import {Message, Messages}                          from "./Message";
-import {inMission}                                  from "./Missions";
-import {Player}                                     from "./Player";
-import {Script, findRunningScript, RunningScript,
-        isScriptFilename}                           from "./Script";
-import {Server, getServer, AddToAllServers,
-        AllServers, processSingleServerGrowth,
-        GetServerByHostname}                        from "./Server";
-import {Settings}                                   from "./Settings";
-import {SpecialServerIps}                           from "./SpecialServerIps";
-import {Stock}                                      from "./Stock";
-import {StockMarket, StockSymbols, SymbolToStockMap, initStockSymbols,
-        initStockMarket, initSymbolToStockMap, stockMarketCycle, buyStock,
-        sellStock, updateStockPrices, displayStockMarketContent,
-        updateStockTicker, updateStockPlayerPosition,
-        shortStock, sellShort, OrderTypes,
-        PositionTypes, placeOrder, cancelOrder}     from "./StockMarket";
-import {post}                                       from "./ui/postToTerminal";
-import {TextFile, getTextFile, createTextFile}      from "./TextFile";
+import { getRamCost } from "./Netscript/RamCostGenerator";
+import { WorkerScriptStartStopEventEmitter } from "./Netscript/WorkerScriptStartStopEventEmitter";
 
-import {unknownBladeburnerActionErrorMessage,
-        unknownBladeburnerExceptionMessage,
-        checkBladeburnerAccess}                     from "./NetscriptBladeburner.js";
-import {WorkerScript, workerScripts,
-        killWorkerScript, NetscriptPorts}           from "./NetscriptWorker";
-import {makeRuntimeRejectMsg, netscriptDelay,
-        runScriptFromScript}                        from "./NetscriptEvaluator";
-import {NetscriptPort}                              from "./NetscriptPort";
+import { Augmentation } from "./Augmentation/Augmentation";
+import { Augmentations } from "./Augmentation/Augmentations";
+import {
+    augmentationExists,
+    installAugmentations
+} from "./Augmentation/AugmentationHelpers";
+import { AugmentationNames } from "./Augmentation/data/AugmentationNames";
+import { BitNodeMultipliers } from "./BitNode/BitNodeMultipliers";
+import { findCrime } from "./Crime/CrimeHelpers";
+import { Bladeburner } from "./Bladeburner";
+import { Company } from "./Company/Company";
+import { Companies, companyExists } from "./Company/Companies";
+import { CompanyPosition } from "./Company/CompanyPosition";
+import { CompanyPositions } from "./Company/CompanyPositions";
+import { CONSTANTS } from "./Constants";
+import { DarkWebItems } from "./DarkWeb/DarkWebItems";
+import {
+    calculateHackingChance,
+    calculateHackingExpGain,
+    calculatePercentMoneyHacked,
+    calculateHackingTime,
+    calculateGrowTime,
+    calculateWeakenTime
+} from "./Hacking";
+import { AllGangs } from "./Gang";
+import { Faction } from "./Faction/Faction";
+import { Factions, factionExists } from "./Faction/Factions";
+import { joinFaction, purchaseAugmentation } from "./Faction/FactionHelpers";
+import { FactionWorkType } from "./Faction/FactionWorkTypeEnum";
+import {
+    netscriptCanGrow,
+    netscriptCanHack,
+    netscriptCanWeaken
+} from "./Hacking/netscriptCanHack";
 
-import Decimal                                      from "decimal.js";
-import {Page, routing}                              from "./ui/navigationTracking";
-import {dialogBoxCreate}                            from "../utils/DialogBox";
-import {isPowerOfTwo}                               from "../utils/helpers/isPowerOfTwo";
-import {arrayToString}                              from "../utils/helpers/arrayToString";
-import {createRandomIp}                             from "../utils/IPAddress";
-import {formatNumber, isHTML}                       from "../utils/StringHelperFunctions";
-import {isString}                                   from "../utils/helpers/isString";
-import {yesNoBoxClose, yesNoBoxGetYesButton,
-        yesNoBoxGetNoButton, yesNoBoxCreate,
-        yesNoBoxOpen}                               from "../utils/YesNoBox";
+import {
+    getCostOfNextHacknetNode,
+    getCostOfNextHacknetServer,
+    hasHacknetServers,
+    purchaseHacknet,
+    purchaseLevelUpgrade,
+    purchaseRamUpgrade,
+    purchaseCoreUpgrade,
+    purchaseCacheUpgrade,
+    purchaseHashUpgrade,
+    updateHashManagerCapacity,
+} from "./Hacknet/HacknetHelpers";
+import { HacknetServer } from "./Hacknet/HacknetServer";
+import { CityName } from "./Locations/data/CityNames";
+import { LocationName } from "./Locations/data/LocationNames";
 
-var hasCorporationSF            = false, //Source-File 3
-    hasSingularitySF            = false, //Source-File 4
-    hasAISF                     = false, //Source-File 5
-    hasBladeburnerSF            = false, //Source-File 6
-    hasBladeburner2079SF        = false, //Source-File 7
-    hasWallStreetSF             = false, //Source-File 8
-    hasBn11SF                   = false; //Source-File 11
+import { Message } from "./Message/Message";
+import { Messages } from "./Message/MessageHelpers";
+import { inMission } from "./Missions";
+import { Player } from "./Player";
+import { Programs } from "./Programs/Programs";
+import { Script } from "./Script/Script";
+import { findRunningScript } from "./Script/ScriptHelpers";
+import { isScriptFilename } from "./Script/ScriptHelpersTS";
+import {
+    AllServers,
+    AddToAllServers,
+    createUniqueRandomIp,
+} from "./Server/AllServers";
+import { Server } from "./Server/Server";
+import {
+    GetServerByHostname,
+    getServer,
+    getServerOnNetwork,
+    numCycleForGrowth,
+    processSingleServerGrowth,
+    safetlyCreateUniqueServer,
+} from "./Server/ServerHelpers";
+import {
+    getPurchaseServerCost,
+    getPurchaseServerLimit,
+    getPurchaseServerMaxRam
+} from "./Server/ServerPurchases";
+import { Settings } from "./Settings/Settings";
+import { SpecialServerIps } from "./Server/SpecialServerIps";
+import { SourceFileFlags } from "./SourceFile/SourceFileFlags";
+import {
+    buyStock,
+    sellStock,
+    shortStock,
+    sellShort,
+} from "./StockMarket/BuyingAndSelling";
+import {
+    influenceStockThroughServerHack,
+    influenceStockThroughServerGrow,
+} from "./StockMarket/PlayerInfluencing";
+import { Stock } from "./StockMarket/Stock";
+import {
+    StockMarket,
+    SymbolToStockMap,
+    placeOrder,
+    cancelOrder,
+    displayStockMarketContent,
+} from "./StockMarket/StockMarket";
+import {
+    getBuyTransactionCost,
+    getSellTransactionGain,
+} from "./StockMarket/StockMarketHelpers";
+import { OrderTypes } from "./StockMarket/data/OrderTypes";
+import { PositionTypes } from "./StockMarket/data/PositionTypes";
+import { StockSymbols } from "./StockMarket/data/StockSymbols";
+import {
+    getStockMarket4SDataCost,
+    getStockMarket4STixApiCost
+} from "./StockMarket/StockMarketCosts";
+import { isValidFilePath } from "./Terminal/DirectoryHelpers";
+import { TextFile, getTextFile, createTextFile } from "./TextFile";
 
-var singularitySFLvl=1, wallStreetSFLvl=1;
+import {
+    unknownBladeburnerActionErrorMessage,
+    unknownBladeburnerExceptionMessage,
+    checkBladeburnerAccess
+} from "./NetscriptBladeburner";
+import * as nsGang from "./NetscriptGang";
+import {
+    NetscriptPorts,
+    runScriptFromScript,
+} from "./NetscriptWorker";
+import { killWorkerScript } from "./Netscript/killWorkerScript";
+import { workerScripts } from "./Netscript/WorkerScripts";
+import {
+    makeRuntimeRejectMsg,
+    netscriptDelay,
+    resolveNetscriptRequestedThreads,
+} from "./NetscriptEvaluator";
+import { NetscriptPort } from "./NetscriptPort";
+import { SleeveTaskType } from "./PersonObjects/Sleeve/SleeveTaskTypesEnum";
+import { findSleevePurchasableAugs } from "./PersonObjects/Sleeve/SleeveHelpers";
 
-var possibleLogs = {
+import { Page, routing } from "./ui/navigationTracking";
+import { numeralWrapper } from "./ui/numeralFormat";
+import { post } from "./ui/postToTerminal";
+import { setTimeoutRef } from "./utils/SetTimeoutRef";
+import { is2DArray } from "./utils/helpers/is2DArray";
+
+import { dialogBoxCreate } from "../utils/DialogBox";
+import { formatNumber, isHTML } from "../utils/StringHelperFunctions";
+import { logBoxCreate } from "../utils/LogBox";
+import { arrayToString } from "../utils/helpers/arrayToString";
+import { isPowerOfTwo } from "../utils/helpers/isPowerOfTwo";
+import { isString } from "../utils/helpers/isString";
+
+import { createElement } from "../utils/uiHelpers/createElement";
+import { createPopup } from "../utils/uiHelpers/createPopup";
+import { removeElementById } from "../utils/uiHelpers/removeElementById";
+
+const possibleLogs = {
     ALL: true,
     scan: true,
     hack: true,
@@ -106,8 +186,16 @@ var possibleLogs = {
     getServerGrowth: true,
     getServerNumPortsRequired: true,
     getServerRam: true,
+
+    // TIX API
     buyStock: true,
     sellStock: true,
+    shortStock: true,
+    sellShort: true,
+    purchase4SMarketData: true,
+    purchase4SMarketDataTixApi: true,
+
+    // Singularity Functions
     purchaseServer: true,
     deleteServer: true,
     universityCourse: true,
@@ -124,38 +212,33 @@ var possibleLogs = {
     donateToFaction: true,
     createProgram: true,
     commitCrime: true,
-    shortStock: true,
-    sellShort: true,
+
+    // Bladeburner API
     startAction: true,
     upgradeSkill: true,
     setTeamSize: true,
     joinBladeburnerFaction: true,
+
+    // Gang API
+    recruitMember: true,
+    setMemberTask: true,
+    purchaseEquipment: true,
+    setTerritoryWarfare: true,
 }
 
-//Used to check and set flags for every Source File, despite the name of the function
-function initSingularitySFFlags() {
-    for (var i = 0; i < Player.sourceFiles.length; ++i) {
-        if (Player.sourceFiles[i].n === 3) {hasCorporationSF        = true;}
-        if (Player.sourceFiles[i].n === 4) {
-            hasSingularitySF = true;
-            singularitySFLvl = Player.sourceFiles[i].lvl;
-        }
-        if (Player.sourceFiles[i].n === 5) {hasAISF                 = true;}
-        if (Player.sourceFiles[i].n === 6) {hasBladeburnerSF        = true;}
-        if (Player.sourceFiles[i].n === 7) {hasBladeburner2079SF    = true;}
-        if (Player.sourceFiles[i].n === 8) {
-            hasWallStreetSF = true;
-            wallStreetSFLvl = Player.sourceFiles[i].lvl;
-        }
-        if (Player.sourceFiles[i].n === 11) {hasBn11SF              = true;}
-    }
-}
 
 function NetscriptFunctions(workerScript) {
-    var updateDynamicRam = function(fnName, ramCost) {
-        if (workerScript.dynamicLoadedFns[fnName]) {return;}
+    const updateDynamicRam = function(fnName, ramCost) {
+        if (workerScript.dynamicLoadedFns[fnName]) { return; }
         workerScript.dynamicLoadedFns[fnName] = true;
-        workerScript.dynamicRamUsage += ramCost;
+
+        let threads = workerScript.scriptRef.threads;
+        if (typeof threads !== 'number') {
+            console.warn(`WorkerScript detected NaN for threadcount for ${workerScript.name} on ${workerScript.serverIp}`);
+            threads = 1;
+        }
+
+        workerScript.dynamicRamUsage += (ramCost * threads);
         if (workerScript.dynamicRamUsage > 1.01 * workerScript.ramUsage) {
             throw makeRuntimeRejectMsg(workerScript,
                                        "Dynamic RAM usage calculated to be greater than initial RAM usage on fn: " + fnName +
@@ -166,43 +249,142 @@ function NetscriptFunctions(workerScript) {
         }
     };
 
-    var updateStaticRam = function(fnName, ramCost) {
-        if (workerScript.loadedFns[fnName]) {
-            return 0;
-        } else {
-            workerScript.loadedFns[fnName] = true;
-            return ramCost;
+    /**
+     * Gets the Server for a specific hostname/ip, throwing an error
+     * if the server doesn't exist.
+     * @param {string} ip - Hostname or IP of the server
+     * @param {string} callingFnName - Name of calling function. For logging purposes
+     * @returns {Server} The specified Server
+     */
+    const safeGetServer = function(ip, callingFnName="") {
+        var server = getServer(ip);
+        if (server == null) {
+            workerScript.log(`ERROR: Invalid IP or hostname passed into ${callingFnName}()`);
+            throw makeRuntimeRejectMsg(workerScript, `Invalid IP or hostname passed into ${callingFnName}() function`);
         }
-    };
+        return server;
+    }
 
-    //Utility function to get Hacknet Node object
-    var getHacknetNode = function(i) {
+    /**
+     * Searches for and returns the RunningScript object for the specified script.
+     * If the 'fn' argument is not specified, this returns the current RunningScript.
+     * @param {string} fn - Filename of script
+     * @param {string} ip - Hostname/ip of the server on which the script resides
+     * @param {any[]} scriptArgs - Running script's arguments
+     * @returns {RunningScript}
+     *      Running script identified by the parameters, or null if no such script
+     *      exists, or the current running script if the first argument 'fn'
+     *      is not specified.
+     */
+    const getRunningScript = function(fn, ip, callingFnName, scriptArgs) {
+        // Sanitize arguments
+        if (typeof callingFnName !== "string" || callingFnName === "") {
+            callingFnName = "getRunningScript";
+        }
+
+        if (!Array.isArray(scriptArgs)) {
+            throw makeRuntimeRejectMsg(
+                workerScript,
+                `Invalid scriptArgs argument passed into getRunningScript() from ${callingFnName}(). ` +
+                `This is probably a bug. Please report to game developer`
+            );
+        }
+
+        if (fn != null && typeof fn === "string") {
+            // Get Logs of another script
+            if (ip == null) { ip = workerScript.serverIp; }
+            const server = safeGetServer(ip, callingFnName);
+
+            return findRunningScript(fn, scriptArgs, server);
+        }
+
+        // If no arguments are specified, return the current RunningScript
+        return workerScript.scriptRef;
+    }
+
+    /**
+     * Helper function for getting the error log message when the user specifies
+     * a nonexistent running script
+     * @param {string} fn - Filename of script
+     * @param {string} ip - Hostname/ip of the server on which the script resides
+     * @param {any[]} scriptArgs - Running script's arguments
+     * @returns {string} Error message to print to logs
+     */
+    const getCannotFindRunningScriptErrorMessage = function(fn, ip, scriptArgs) {
+        if (!Array.isArray(scriptArgs)) {
+            scriptArgs = [];
+        }
+
+        return `Cannot find running script ${fn} on server ${ip} with args: ${arrayToString(scriptArgs)}`;
+    }
+
+    /**
+     * Checks if the player has TIX API access. Throws an error if the player does not
+     */
+    const checkTixApiAccess = function(callingFn="") {
+        if (!Player.hasWseAccount) {
+            throw makeRuntimeRejectMsg(workerScript, `You don't have WSE Access! Cannot use ${callingFn}()`);
+        }
+        if (!Player.hasTixApiAccess) {
+            throw makeRuntimeRejectMsg(workerScript, `You don't have TIX API Access! Cannot use ${callingFn}()`);
+        }
+    }
+
+    /**
+     * Gets a stock, given its symbol. Throws an error if the symbol is invalid
+     * @param {string} symbol - Stock's symbol
+     * @returns {Stock} stock object
+     */
+    const getStockFromSymbol = function(symbol, callingFn="") {
+        const stock = SymbolToStockMap[symbol];
+        if (stock == null) {
+            throw makeRuntimeRejectMsg(workerScript, `Invalid stock symbol passed into ${callingFn}()`);
+        }
+
+        return stock;
+    }
+
+    /**
+     * Used to fail a function if the function's target is a Hacknet Server.
+     * This is used for functions that should run on normal Servers, but not Hacknet Servers
+     * @param {Server} server - Target server
+     * @param {string} callingFn - Name of calling function. For logging purposes
+     * @returns {boolean} True if the server is a Hacknet Server, false otherwise
+     */
+    const failOnHacknetServer = function(server, callingFn="") {
+        if (server instanceof HacknetServer) {
+            workerScript.log(`ERROR: ${callingFn}() failed because it does not work on Hacknet Servers`);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    // Utility function to get Hacknet Node object
+    const getHacknetNode = function(i) {
         if (isNaN(i)) {
             throw makeRuntimeRejectMsg(workerScript, "Invalid index specified for Hacknet Node: " + i);
         }
         if (i < 0 || i >= Player.hacknetNodes.length) {
             throw makeRuntimeRejectMsg(workerScript, "Index specified for Hacknet Node is out-of-bounds: " + i);
         }
-        return Player.hacknetNodes[i];
+
+        if (hasHacknetServers()) {
+            const hserver = AllServers[Player.hacknetNodes[i]];
+            if (hserver == null) {
+                throw makeRuntimeRejectMsg(workerScript, `Could not get Hacknet Server for index ${i}. This is probably a bug, please report to game dev`);
+            }
+
+            return hserver;
+        } else {
+            return Player.hacknetNodes[i];
+        }
     };
 
-    /**
-     * @param {number} ram The amount of server RAM to calculate cost of.
-     * @exception {Error} If the value passed in is not numeric, out of range, or too large of a value.
-     * @returns {number} The cost of
-     */
-    const getPurchaseServerRamCostGuard = (ram) => {
-        const guardedRam = Math.round(ram);
-        if (isNaN(guardedRam) || !isPowerOfTwo(guardedRam)) {
-            throw Error("failed due to invalid ram argument. Must be numeric and a power of 2");
-        }
-
-        if (guardedRam > CONSTANTS.PurchasedServerMaxRam) {
-            throw Error("failed because specified RAM was too high. Maximum RAM on a purchased server is " + CONSTANTS.PurchasedServerMaxRam + "GB");
-        }
-
-        return guardedRam * CONSTANTS.BaseCostFor1GBOfRamServer;
-    };
+    const getCodingContract = function(fn, ip) {
+        var server = safeGetServer(ip, "getCodingContract");
+        return server.getContract(fn);
+    }
 
     return {
         hacknet : {
@@ -213,52 +395,88 @@ function NetscriptFunctions(workerScript) {
                 return purchaseHacknet();
             },
             getPurchaseNodeCost : function() {
-                return getCostOfNextHacknetNode();
+                if (hasHacknetServers()) {
+                    return getCostOfNextHacknetServer();
+                } else {
+                    return getCostOfNextHacknetNode();
+                }
             },
             getNodeStats : function(i) {
-                var node = getHacknetNode(i);
-                return {
-                    name:               node.name,
+                const node = getHacknetNode(i);
+                const hasUpgraded = hasHacknetServers();
+                const res = {
+                    name:               hasUpgraded ? node.hostname : node.name,
                     level:              node.level,
-                    ram:                node.ram,
+                    ram:                hasUpgraded ? node.maxRam : node.ram,
                     cores:              node.cores,
-                    production:         node.moneyGainRatePerSecond,
+                    production:         hasUpgraded ? node.hashRate : node.moneyGainRatePerSecond,
                     timeOnline:         node.onlineTimeSeconds,
-                    totalProduction:    node.totalMoneyGenerated,
+                    totalProduction:    hasUpgraded ? node.totalHashesGenerated : node.totalMoneyGenerated,
                 };
+
+                if (hasUpgraded) {
+                    res.cache = node.cache;
+                    res.hashCapacity = node.hashCapacity;
+                }
+
+                return res;
             },
             upgradeLevel : function(i, n) {
-                var node = getHacknetNode(i);
-                return node.purchaseLevelUpgrade(n);
+                const node = getHacknetNode(i);
+                return purchaseLevelUpgrade(node, n);
             },
             upgradeRam : function(i, n) {
-                var node = getHacknetNode(i);
-                return node.purchaseRamUpgrade(n);
+                const node = getHacknetNode(i);
+                return purchaseRamUpgrade(node, n);
             },
             upgradeCore : function(i, n) {
-                var node = getHacknetNode(i);
-                return node.purchaseCoreUpgrade(n);
+                const node = getHacknetNode(i);
+                return purchaseCoreUpgrade(node, n);
+            },
+            upgradeCache : function(i, n) {
+                if (!hasHacknetServers()) { return false; }
+                const node = getHacknetNode(i);
+                const res = purchaseCacheUpgrade(node, n);
+                if (res) {
+                    updateHashManagerCapacity();
+                }
+                return res;
             },
             getLevelUpgradeCost : function(i, n) {
-                var node = getHacknetNode(i);
-                return node.calculateLevelUpgradeCost(n);
+                const node = getHacknetNode(i);
+                return node.calculateLevelUpgradeCost(n, Player.hacknet_node_level_cost_mult);
             },
             getRamUpgradeCost : function(i, n) {
-                var node = getHacknetNode(i);
-                return node.calculateRamUpgradeCost(n);
+                const node = getHacknetNode(i);
+                return node.calculateRamUpgradeCost(n, Player.hacknet_node_ram_cost_mult);
             },
             getCoreUpgradeCost : function(i, n) {
-                var node = getHacknetNode(i);
-                return node.calculateCoreUpgradeCost(n);
+                const node = getHacknetNode(i);
+                return node.calculateCoreUpgradeCost(n, Player.hacknet_node_core_cost_mult);
+            },
+            getCacheUpgradeCost : function(i, n) {
+                if (!hasHacknetServers()) { return Infinity; }
+                const node = getHacknetNode(i);
+                return node.calculateCacheUpgradeCost(n);
+            },
+            numHashes : function() {
+                if (!hasHacknetServers()) { return 0; }
+                return Player.hashManager.hashes;
+            },
+            hashCost : function(upgName) {
+                if (!hasHacknetServers()) { return Infinity; }
+
+                return Player.hashManager.getUpgradeCost(upgName);
+            },
+            spendHashes : function(upgName, upgTarget) {
+                if (!hasHacknetServers()) { return false; }
+                return purchaseHashUpgrade(upgName, upgTarget);
             }
         },
         sprintf : sprintf,
         vsprintf: vsprintf,
-        scan : function(ip=workerScript.serverIp, hostnames=true){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("scan", CONSTANTS.ScriptScanRamCost);
-            }
-            updateDynamicRam("scan", CONSTANTS.ScriptScanRamCost);
+        scan : function(ip=workerScript.serverIp, hostnames=true) {
+            updateDynamicRam("scan", getRamCost("scan"));
             var server = getServer(ip);
             if (server == null) {
                 throw makeRuntimeRejectMsg(workerScript, 'Invalid IP or hostname passed into scan() command');
@@ -267,9 +485,9 @@ function NetscriptFunctions(workerScript) {
             for (var i = 0; i < server.serversOnNetwork.length; i++) {
                 var entry;
                 if (hostnames) {
-                    entry = server.getServerOnNetwork(i).hostname;
+                    entry = getServerOnNetwork(server, i).hostname;
                 } else {
-                    entry = server.getServerOnNetwork(i).ip;
+                    entry = getServerOnNetwork(server, i).ip;
                 }
                 if (entry == null) {
                     continue;
@@ -281,57 +499,49 @@ function NetscriptFunctions(workerScript) {
             }
             return out;
         },
-        hack : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("hack", CONSTANTS.ScriptHackRamCost);
-            }
-            updateDynamicRam("hack", CONSTANTS.ScriptHackRamCost);
+        hack : function(ip, { threads: requestedThreads, stock } = {}){
+            updateDynamicRam("hack", getRamCost("hack"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Hack() call has incorrect number of arguments. Takes 1 argument");
             }
-            var threads = workerScript.scriptRef.threads;
-            if (isNaN(threads) || threads < 1) {threads = 1;}
-            var server = getServer(ip);
+            const threads = resolveNetscriptRequestedThreads(workerScript, "hack", requestedThreads);
+            const server = getServer(ip);
             if (server == null) {
                 workerScript.scriptRef.log("hack() error. Invalid IP or hostname passed in: " + ip + ". Stopping...");
                 throw makeRuntimeRejectMsg(workerScript, "hack() error. Invalid IP or hostname passed in: " + ip + ". Stopping...");
             }
 
-            //Calculate the hacking time
-            var hackingTime = calculateHackingTime(server); //This is in seconds
+            // Calculate the hacking time
+            var hackingTime = calculateHackingTime(server); // This is in seconds
 
-            //No root access or skill level too low
-            if (server.hasAdminRights == false) {
-                workerScript.scriptRef.log("Cannot hack this server (" + server.hostname + ") because user does not have root access");
-                throw makeRuntimeRejectMsg(workerScript, "Cannot hack this server (" + server.hostname + ") because user does not have root access");
-            }
-
-            if (server.requiredHackingSkill > Player.hacking_skill) {
-                workerScript.scriptRef.log("Cannot hack this server (" + server.hostname + ") because user's hacking skill is not high enough");
-                throw makeRuntimeRejectMsg(workerScript, "Cannot hack this server (" + server.hostname + ") because user's hacking skill is not high enough");
+            // No root access or skill level too low
+            const canHack = netscriptCanHack(server, Player);
+            if (!canHack.res) {
+                workerScript.scriptRef.log(`ERROR: ${canHack.msg}`);
+                throw makeRuntimeRejectMsg(workerScript, canHack.msg);
             }
 
             if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.hack == null) {
                 workerScript.scriptRef.log("Attempting to hack " + ip + " in " + hackingTime.toFixed(3) + " seconds (t=" + threads + ")");
             }
+
             return netscriptDelay(hackingTime * 1000, workerScript).then(function() {
                 if (workerScript.env.stopFlag) {return Promise.reject(workerScript);}
                 var hackChance = calculateHackingChance(server);
                 var rand = Math.random();
                 var expGainedOnSuccess = calculateHackingExpGain(server) * threads;
                 var expGainedOnFailure = (expGainedOnSuccess / 4);
-                if (rand < hackChance) { //Success!
+                if (rand < hackChance) { // Success!
                     const percentHacked = calculatePercentMoneyHacked(server);
                     let maxThreadNeeded = Math.ceil(1/percentHacked*(server.moneyAvailable/server.moneyMax));
                     if (isNaN(maxThreadNeeded)) {
-                        //Server has a 'max money' of 0 (probably).
-                        //We'll set this to an arbitrarily large value
+                        // Server has a 'max money' of 0 (probably). We'll set this to an arbitrarily large value
                         maxThreadNeeded = 1e6;
                     }
 
                     let moneyGained = Math.floor(server.moneyAvailable * percentHacked) * threads;
 
-                    //Over-the-top safety checks
+                    // Over-the-top safety checks
                     if (moneyGained <= 0) {
                         moneyGained = 0;
                         expGainedOnSuccess = expGainedOnFailure;
@@ -343,6 +553,7 @@ function NetscriptFunctions(workerScript) {
                     Player.gainMoney(moneyGained);
                     workerScript.scriptRef.onlineMoneyMade += moneyGained;
                     Player.scriptProdSinceLastAug += moneyGained;
+                    Player.recordMoneySource(moneyGained, "hacking");
                     workerScript.scriptRef.recordHack(server.ip, moneyGained, threads);
                     Player.gainHackingExp(expGainedOnSuccess);
                     workerScript.scriptRef.onlineExpGained += expGainedOnSuccess;
@@ -350,9 +561,12 @@ function NetscriptFunctions(workerScript) {
                         workerScript.scriptRef.log("Script SUCCESSFULLY hacked " + server.hostname + " for $" + formatNumber(moneyGained, 2) + " and " + formatNumber(expGainedOnSuccess, 4) +  " exp (t=" + threads + ")");
                     }
                     server.fortify(CONSTANTS.ServerFortifyAmount * Math.min(threads, maxThreadNeeded));
+                    if (stock) {
+                        influenceStockThroughServerHack(server, moneyGained);
+                    }
                     return Promise.resolve(moneyGained);
                 } else {
-                    //Player only gains 25% exp for failure?
+                    // Player only gains 25% exp for failure?
                     Player.gainHackingExp(expGainedOnFailure);
                     workerScript.scriptRef.onlineExpGained += expGainedOnFailure;
                     if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.hack == null) {
@@ -362,25 +576,51 @@ function NetscriptFunctions(workerScript) {
                 }
             });
         },
+        hackAnalyzeThreads : function(ip, hackAmount) {
+            updateDynamicRam("hackAnalyzeThreads", getRamCost("hackAnalyzeThreads"));
+
+            // Check argument validity
+            const server = safeGetServer(ip, 'hackAnalyzeThreads');
+            if (isNaN(hackAmount)) {
+                throw makeRuntimeRejectMsg(workerScript, `Invalid growth argument passed into hackAnalyzeThreads: ${hackAmount}. Must be numeric`);
+            }
+
+            if (hackAmount < 0 || hackAmount > server.moneyAvailable) {
+                return -1;
+            }
+
+            const percentHacked = calculatePercentMoneyHacked(server);
+
+            return hackAmount / Math.floor(server.moneyAvailable * percentHacked);
+        },
+        hackAnalyzePercent : function(ip) {
+            updateDynamicRam("hackAnalyzePercent", getRamCost("hackAnalyzePercent"));
+
+            const server = safeGetServer(ip, 'hackAnalyzePercent');
+
+            return calculatePercentMoneyHacked(server) * 100;
+        },
+        hackChance : function(ip) {
+            updateDynamicRam("hackChance", getRamCost("hackChance"));
+
+            const server = safeGetServer(ip, 'hackChance');
+
+            return calculateHackingChance(server);
+        },
         sleep : function(time){
-            if (workerScript.checkingRam) {return 0;}
             if (time === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "sleep() call has incorrect number of arguments. Takes 1 argument");
             }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.sleep == null) {
-                workerScript.scriptRef.log("Sleeping for " + time + " milliseconds");
+            if (workerScript.shouldLog("sleep")) {
+                workerScript.log(`Sleeping for ${time} milliseconds`);
             }
             return netscriptDelay(time, workerScript).then(function() {
                 return Promise.resolve(true);
             });
         },
-        grow : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("grow", CONSTANTS.ScriptGrowRamCost);
-            }
-            updateDynamicRam("grow", CONSTANTS.ScriptGrowRamCost);
-            var threads = workerScript.scriptRef.threads;
-            if (isNaN(threads) || threads < 1) {threads = 1;}
+        grow : function(ip, { threads: requestedThreads, stock } = {}){
+            updateDynamicRam("grow", getRamCost("grow"));
+            const threads = resolveNetscriptRequestedThreads(workerScript, "grow", requestedThreads);
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "grow() call has incorrect number of arguments. Takes 1 argument");
             }
@@ -390,10 +630,11 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "Cannot grow(). Invalid IP or hostname passed in: " + ip);
             }
 
-            //No root access or skill level too low
-            if (server.hasAdminRights == false) {
-                workerScript.scriptRef.log("Cannot grow this server (" + server.hostname + ") because user does not have root access");
-                throw makeRuntimeRejectMsg(workerScript, "Cannot grow this server (" + server.hostname + ") because user does not have root access");
+            // No root access or skill level too low
+            const canHack = netscriptCanGrow(server);
+            if (!canHack.res) {
+                workerScript.scriptRef.log(`ERROR: ${canHack.msg}`);
+                throw makeRuntimeRejectMsg(workerScript, canHack.msg);
             }
 
             var growTime = calculateGrowTime(server);
@@ -402,32 +643,42 @@ function NetscriptFunctions(workerScript) {
             }
             return netscriptDelay(growTime * 1000, workerScript).then(function() {
                 if (workerScript.env.stopFlag) {return Promise.reject(workerScript);}
-                const moneyBefore = server.moneyAvailable;
-                server.moneyAvailable += (1 * threads); //It can be grown even if it has no money
-                var growthPercentage = processSingleServerGrowth(server, 450 * threads);
+                const moneyBefore = server.moneyAvailable <= 0 ? 1 : server.moneyAvailable;
+                server.moneyAvailable += (1 * threads); // It can be grown even if it has no money
+                var growthPercentage = processSingleServerGrowth(server, 450 * threads, Player);
                 const moneyAfter = server.moneyAvailable;
                 workerScript.scriptRef.recordGrow(server.ip, threads);
                 var expGain = calculateHackingExpGain(server) * threads;
                 if (growthPercentage == 1) {
                     expGain = 0;
                 }
-                if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.grow == null) {
-                    workerScript.scriptRef.log("Available money on " + server.hostname + " grown by " +
-                                                formatNumber((moneyAfter/moneyBefore)*100 - 100, 6) + "%. Gained " +
-                                                formatNumber(expGain, 4) + " hacking exp (t=" + threads +")");
+                if (workerScript.shouldLog("grow")) {
+                    workerScript.log("Available money on " + server.hostname + " grown by " +
+                                     formatNumber((moneyAfter/moneyBefore)*100 - 100, 6) + "%. Gained " +
+                                     formatNumber(expGain, 4) + " hacking exp (t=" + threads +")");
                 }
                 workerScript.scriptRef.onlineExpGained += expGain;
                 Player.gainHackingExp(expGain);
+                if (stock) {
+                    influenceStockThroughServerGrow(server, moneyAfter - moneyBefore);
+                }
                 return Promise.resolve(moneyAfter/moneyBefore);
             });
         },
-        weaken : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("weaken", CONSTANTS.ScriptWeakenRamCost);
+        growthAnalyze : function(ip, growth) {
+            updateDynamicRam("growthAnalyze", getRamCost("growthAnalyze"));
+
+            // Check argument validity
+            const server = safeGetServer(ip, 'growthAnalyze');
+            if (typeof growth !== "number" || isNaN(growth) || growth < 1) {
+                throw makeRuntimeRejectMsg(workerScript, `Invalid growth argument passed into growthAnalyze: ${growth}. Must be numeric and >= 1`);
             }
-            updateDynamicRam("weaken", CONSTANTS.ScriptWeakenRamCost);
-            var threads = workerScript.scriptRef.threads;
-            if (isNaN(threads) || threads < 1) {threads = 1;}
+
+            return numCycleForGrowth(server, Number(growth), Player);
+        },
+        weaken : function(ip, { threads: requestedThreads } = {}) {
+            updateDynamicRam("weaken", getRamCost("weaken"));
+            var threads = resolveNetscriptRequestedThreads(workerScript, "weaken", requestedThreads)
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "weaken() call has incorrect number of arguments. Takes 1 argument");
             }
@@ -437,10 +688,11 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "Cannot weaken(). Invalid IP or hostname passed in: " + ip);
             }
 
-            //No root access or skill level too low
-            if (server.hasAdminRights == false) {
-                workerScript.scriptRef.log("Cannot weaken this server (" + server.hostname + ") because user does not have root access");
-                throw makeRuntimeRejectMsg(workerScript, "Cannot weaken this server (" + server.hostname + ") because user does not have root access");
+            // No root access or skill level too low
+            const canHack = netscriptCanWeaken(server);
+            if (!canHack.res) {
+                workerScript.scriptRef.log(`ERROR: ${canHack.msg}`);
+                throw makeRuntimeRejectMsg(workerScript, canHack.msg);
             }
 
             var weakenTime = calculateWeakenTime(server);
@@ -462,35 +714,24 @@ function NetscriptFunctions(workerScript) {
                 return Promise.resolve(CONSTANTS.ServerWeakenAmount * threads);
             });
         },
-        print : function(args){
-            if (workerScript.checkingRam) {return 0;}
+        print: function(args){
             if (args === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "print() call has incorrect number of arguments. Takes 1 argument");
             }
             workerScript.scriptRef.log(args.toString());
         },
-        tprint : function(args) {
-            if (workerScript.checkingRam) {return 0;}
+        tprint: function(args) {
             if (args === undefined || args == null) {
                 throw makeRuntimeRejectMsg(workerScript, "tprint() call has incorrect number of arguments. Takes 1 argument");
             }
             var x = args.toString();
-            if (isHTML(x)) {
-                Player.takeDamage(1);
-                dialogBoxCreate("You suddenly feel a sharp shooting pain through your body as an angry voice in your head exclaims: <br><br>" +
-                                "DON'T USE TPRINT() TO OUTPUT HTML ELEMENTS TO YOUR TERMINAL!!!!<br><br>" +
-                                "(You lost 1 HP)");
-                return;
-            }
             post(workerScript.scriptRef.filename + ": " + args.toString());
         },
-        clearLog : function() {
-            if (workerScript.checkingRam) {return 0;}
+        clearLog: function() {
             workerScript.scriptRef.clearLog();
         },
-        disableLog : function(fn) {
-            if (workerScript.checkingRam) {return 0;}
-            if(possibleLogs[fn]===undefined) {
+        disableLog: function(fn) {
+            if (possibleLogs[fn]===undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument to disableLog: "+fn);
             }
             workerScript.disableLogs[fn] = true;
@@ -498,9 +739,8 @@ function NetscriptFunctions(workerScript) {
                 workerScript.scriptRef.log("Disabled logging for " + fn);
             }
         },
-        enableLog : function(fn) {
-            if (workerScript.checkingRam) {return 0;}
-            if(possibleLogs[fn]===undefined) {
+        enableLog: function(fn) {
+            if (possibleLogs[fn]===undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument to enableLog: "+fn);
             }
             delete workerScript.disableLogs[fn];
@@ -509,21 +749,31 @@ function NetscriptFunctions(workerScript) {
             }
         },
         isLogEnabled : function(fn) {
-            if (workerScript.checkingRam) {return 0;}
             if (possibleLogs[fn] === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument to isLogEnabled: " + fn);
             }
             return workerScript.disableLogs[fn] ? false : true;
         },
-        getScriptLogs : function() {
-            if (workerScript.checkingRam) {return 0;}
-            return workerScript.scriptRef.logs.slice();
-        },
-        nuke : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("nuke", CONSTANTS.ScriptPortProgramRamCost);
+        getScriptLogs: function(fn, ip, ...scriptArgs) {
+            const runningScriptObj = getRunningScript(fn, ip, "getScriptLogs", scriptArgs);
+            if (runningScriptObj == null) {
+                workerScript.log(`getScriptLogs() failed. ${getCannotFindRunningScriptErrorMessage(fn, ip, scriptArgs)}`);
+                return "";
             }
-            updateDynamicRam("nuke", CONSTANTS.ScriptPortProgramRamCost);
+
+            return runningScriptObj.logs.slice();
+        },
+        tail: function(fn, ip, ...scriptArgs) {
+            const runningScriptObj = getRunningScript(fn, ip, "tail", scriptArgs);
+            if (runningScriptObj == null) {
+                workerScript.log(`tail() failed. ${getCannotFindRunningScriptErrorMessage(fn, ip, scriptArgs)} `);
+                return;
+            }
+
+            logBoxCreate(runningScriptObj);
+        },
+        nuke: function(ip){
+            updateDynamicRam("nuke", getRamCost("nuke"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Program call has incorrect number of arguments. Takes 1 argument");
             }
@@ -550,11 +800,8 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        brutessh : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("brutessh", CONSTANTS.ScriptPortProgramRamCost);
-            }
-            updateDynamicRam("brutessh", CONSTANTS.ScriptPortProgramRamCost);
+        brutessh: function(ip){
+            updateDynamicRam("brutessh", getRamCost("brutessh"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Program call has incorrect number of arguments. Takes 1 argument");
             }
@@ -580,11 +827,8 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        ftpcrack : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("ftpcrack", CONSTANTS.ScriptPortProgramRamCost);
-            }
-            updateDynamicRam("ftpcrack", CONSTANTS.ScriptPortProgramRamCost);
+        ftpcrack: function(ip) {
+            updateDynamicRam("ftpcrack", getRamCost("ftpcrack"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Program call has incorrect number of arguments. Takes 1 argument");
             }
@@ -609,11 +853,8 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        relaysmtp : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("relaysmtp", CONSTANTS.ScriptPortProgramRamCost);
-            }
-            updateDynamicRam("relaysmtp", CONSTANTS.ScriptPortProgramRamCost);
+        relaysmtp: function(ip) {
+            updateDynamicRam("relaysmtp", getRamCost("relaysmtp"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Program call has incorrect number of arguments. Takes 1 argument");
             }
@@ -638,11 +879,8 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        httpworm : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("httpworm", CONSTANTS.ScriptPortProgramRamCost);
-            }
-            updateDynamicRam("httpworm", CONSTANTS.ScriptPortProgramRamCost);
+        httpworm: function(ip) {
+            updateDynamicRam("httpworm", getRamCost("httpworm"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Program call has incorrect number of arguments. Takes 1 argument");
             }
@@ -667,11 +905,8 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        sqlinject : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("sqlinject", CONSTANTS.ScriptPortProgramRamCost);
-            }
-            updateDynamicRam("sqlinject", CONSTANTS.ScriptPortProgramRamCost);
+        sqlinject: function(ip) {
+            updateDynamicRam("sqlinject", getRamCost("sqlinject"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "Program call has incorrect number of arguments. Takes 1 argument");
             }
@@ -696,15 +931,12 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        run : function(scriptname,threads = 1){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("run", CONSTANTS.ScriptRunRamCost);
-            }
-            updateDynamicRam("run", CONSTANTS.ScriptRunRamCost);
+        run: function(scriptname,threads = 1) {
+            updateDynamicRam("run", getRamCost("run"));
             if (scriptname === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "run() call has incorrect number of arguments. Usage: run(scriptname, [numThreads], [arg1], [arg2]...)");
             }
-            if (isNaN(threads) || threads < 1) {
+            if (isNaN(threads) || threads <= 0) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument for thread count passed into run(). Must be numeric and greater than 0");
             }
             var argsForNewScript = [];
@@ -718,15 +950,12 @@ function NetscriptFunctions(workerScript) {
 
             return runScriptFromScript(scriptServer, scriptname, argsForNewScript, workerScript, threads);
         },
-        exec : function(scriptname,ip,threads = 1) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("exec", CONSTANTS.ScriptExecRamCost);
-            }
-            updateDynamicRam("exec", CONSTANTS.ScriptExecRamCost);
+        exec: function(scriptname, ip, threads = 1) {
+            updateDynamicRam("exec", getRamCost("exec"));
             if (scriptname === undefined || ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "exec() call has incorrect number of arguments. Usage: exec(scriptname, server, [numThreads], [arg1], [arg2]...)");
             }
-            if (isNaN(threads) || threads < 1) {
+            if (isNaN(threads) || threads <= 0) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument for thread count passed into exec(). Must be numeric and greater than 0");
             }
             var argsForNewScript = [];
@@ -739,19 +968,18 @@ function NetscriptFunctions(workerScript) {
             }
             return runScriptFromScript(server, scriptname, argsForNewScript, workerScript, threads);
         },
-        spawn : function(scriptname, threads) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("spawn", CONSTANTS.ScriptSpawnRamCost);
-            }
-            updateDynamicRam("spawn", CONSTANTS.ScriptSpawnRamCost);
+        spawn: function(scriptname, threads) {
+            updateDynamicRam("spawn", getRamCost("spawn"));
             if (scriptname == null || threads == null) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid scriptname or numThreads argument passed to spawn()");
             }
-            setTimeout(()=>{
+
+            const spawnDelay = 10;
+            setTimeoutRef(() => {
                 if (scriptname === undefined) {
                     throw makeRuntimeRejectMsg(workerScript, "spawn() call has incorrect number of arguments. Usage: spawn(scriptname, numThreads, [arg1], [arg2]...)");
                 }
-                if (isNaN(threads) || threads < 1) {
+                if (isNaN(threads) || threads <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Invalid argument for thread count passed into run(). Must be numeric and greater than 0");
                 }
                 var argsForNewScript = [];
@@ -764,91 +992,97 @@ function NetscriptFunctions(workerScript) {
                 }
 
                 return runScriptFromScript(scriptServer, scriptname, argsForNewScript, workerScript, threads);
-            }, 20000);
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.spawn == null) {
-                workerScript.scriptRef.log("spawn() will execute " + scriptname + " in 20 seconds");
+            }, spawnDelay * 1e3);
+
+            if (workerScript.shouldLog("spawn")) {
+                workerScript.log(`spawn() will execute ${scriptname} in ${spawnDelay} seconds`);
             }
-            NetscriptFunctions(workerScript).exit();
+
+            workerScript.running = false; // Prevent workerScript from "finishing execution naturally"
+            if (killWorkerScript(workerScript)) {
+                workerScript.log("Exiting...");
+            }
         },
-        kill : function(filename,ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("kill", CONSTANTS.ScriptKillRamCost);
+        kill: function(filename, ip, ...scriptArgs) {
+            updateDynamicRam("kill", getRamCost("kill"));
+
+            let res;
+            const killByPid = (typeof filename === "number");
+            if (killByPid) {
+                // Kill by pid
+                res = killWorkerScript(filename);
+            } else {
+                // Kill by filename/ip
+                if (filename === undefined || ip === undefined) {
+                    throw makeRuntimeRejectMsg(workerScript, "kill() call has incorrect number of arguments. Usage: kill(scriptname, server, [arg1], [arg2]...)");
+                }
+
+                const server = safeGetServer(ip);
+                const runningScriptObj = getRunningScript(filename, ip, "kill", scriptArgs);
+                if (runningScriptObj == null) {
+                    workerScript.log(`kill() failed. ${getCannotFindRunningScriptErrorMessage(filename, ip, scriptArgs)}`)
+                    return false;
+                }
+
+                res = killWorkerScript(runningScriptObj, server.ip);
             }
-            updateDynamicRam("kill", CONSTANTS.ScriptKillRamCost);
-            if (filename === undefined || ip === undefined) {
-                throw makeRuntimeRejectMsg(workerScript, "kill() call has incorrect number of arguments. Usage: kill(scriptname, server, [arg1], [arg2]...)");
-            }
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("kill() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "kill() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            var argsForKillTarget = [];
-            for (var i = 2; i < arguments.length; ++i) {
-                argsForKillTarget.push(arguments[i]);
-            }
-            var runningScriptObj = findRunningScript(filename, argsForKillTarget, server);
-            if (runningScriptObj == null) {
-                workerScript.scriptRef.log("kill() failed. No such script "+ filename + " on " + server.hostname + " with args: " + arrayToString(argsForKillTarget));
-                return false;
-            }
-            var res = killWorkerScript(runningScriptObj, server.ip);
+
             if (res) {
-                if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.kill == null) {
-                    workerScript.scriptRef.log("Killing " + filename + " on " + server.hostname + " with args: " + arrayToString(argsForKillTarget) +  ". May take up to a few minutes for the scripts to die...");
+                if (workerScript.shouldLog("kill")) {
+                    if (killByPid) {
+                        workerScript.log(`Killing script with PID ${filename}`);
+                    } else {
+                        workerScript.log(`Killing ${filename} on ${ip} with args: ${arrayToString(scriptArgs)}.`);
+                    }
                 }
                 return true;
             } else {
-                if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.kill == null) {
-                    workerScript.scriptRef.log("kill() failed. No such script "+ filename + " on " + server.hostname + " with args: " + arrayToString(argsForKillTarget));
+                if (workerScript.shouldLog("kill")) {
+                    if (killByPid) {
+                        workerScript.log(`kill() failed. No such script with PID ${filename}`);
+                    } else {
+                        workerScript.log(`kill() failed. No such script ${filename} on ${ip} with args: ${arrayToString(scriptArgs)}`);
+                    }
                 }
                 return false;
             }
         },
-        killall : function(ip=workerScript.serverIp){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("killall", CONSTANTS.ScriptKillRamCost);
-            }
-            updateDynamicRam("killall", CONSTANTS.ScriptKillRamCost);
+        killall: function(ip=workerScript.serverIp) {
+            updateDynamicRam("killall", getRamCost("killall"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "killall() call has incorrect number of arguments. Takes 1 argument");
             }
-            var server = getServer(ip);
+            const server = getServer(ip);
             if (server == null) {
                 workerScript.scriptRef.log("killall() failed. Invalid IP or hostname passed in: " + ip);
                 throw makeRuntimeRejectMsg(workerScript, "killall() failed. Invalid IP or hostname passed in: " + ip);
             }
-            var scriptsRunning = (server.runningScripts.length > 0);
-            for (var i = server.runningScripts.length-1; i >= 0; --i) {
-                killWorkerScript(server.runningScripts[i], server.ip);
+            const scriptsRunning = (server.runningScripts.length > 0);
+            for (let i = server.runningScripts.length-1; i >= 0; --i) {
+                killWorkerScript(server.runningScripts[i], server.ip, false);
             }
+            WorkerScriptStartStopEventEmitter.emitEvent();
             if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.killall == null) {
                 workerScript.scriptRef.log("killall(): Killing all scripts on " + server.hostname + ". May take a few minutes for the scripts to die");
             }
+
             return scriptsRunning;
         },
         exit : function() {
-            if (workerScript.checkingRam) {return 0;}
-            var server = getServer(workerScript.serverIp);
-            if (server == null) {
-                throw makeRuntimeRejectMsg(workerScript, "Error getting Server for this script in exit(). This is a bug please contact game dev");
-            }
-            if (killWorkerScript(workerScript.scriptRef, server.ip)) {
-                workerScript.scriptRef.log("Exiting...");
+            workerScript.running = false; // Prevent workerScript from "finishing execution naturally"
+            if (killWorkerScript(workerScript)) {
+                workerScript.log("Exiting...");
             } else {
-                workerScript.scriptRef.log("Exit failed(). This is a bug please contact game developer");
+                workerScript.log("Exit failed(). This is a bug please contact game developer");
             }
         },
-        scp : function(scriptname, ip1, ip2) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("scp", CONSTANTS.ScriptScpRamCost);
-            }
-            updateDynamicRam("scp", CONSTANTS.ScriptScpRamCost);
+        scp: function(scriptname, ip1, ip2) {
+            updateDynamicRam("scp", getRamCost("scp"));
             if (arguments.length !== 2 && arguments.length !== 3) {
                 throw makeRuntimeRejectMsg(workerScript, "ERROR: scp() call has incorrect number of arguments. Takes 2 or 3 arguments");
             }
             if (scriptname && scriptname.constructor === Array) {
-                //Recursively call scp on all elements of array
+                // Recursively call scp on all elements of array
                 var res = false;
                 scriptname.forEach(function(script) {
                     if (NetscriptFunctions(workerScript).scp(script, ip1, ip2)) {
@@ -857,42 +1091,50 @@ function NetscriptFunctions(workerScript) {
                 });
                 return res;
             }
-            if (!scriptname.endsWith(".lit") && !isScriptFilename(scriptname) &&
-                !scriptname.endsWith("txt")) {
+
+            // Invalid file type
+            if (!isValidFilePath(scriptname)) {
+                throw makeRuntimeRejectMsg(workerScript, `Error: scp() failed due to invalid filename: ${scriptname}`);
+            }
+
+            // Invalid file name
+            if (!scriptname.endsWith(".lit") && !isScriptFilename(scriptname) && !scriptname.endsWith("txt")) {
                 throw makeRuntimeRejectMsg(workerScript, "ERROR: scp() does not work with this file type. It only works for .script, .lit, and .txt files");
             }
 
             var destServer, currServ;
 
-            if (arguments.length === 3) {   //scriptname, source, destination
+            if (ip2 != null) { // 3 Argument version: scriptname, source, destination
                 if (scriptname === undefined || ip1 === undefined || ip2 === undefined) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: scp() call has incorrect number of arguments. Takes 2 or 3 arguments");
                 }
                 destServer = getServer(ip2);
                 if (destServer == null) {
-                    throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid hostname/ip passed into scp() command: " + ip);
+                    throw makeRuntimeRejectMsg(workerScript, `ERROR: Invalid hostname/ip passed into scp() command: ${ip2}`);
                 }
 
                 currServ = getServer(ip1);
                 if (currServ == null) {
-                    throw makeRuntimeRejectMsg(workerScript, "Could not find server ip for this script. This is a bug please contact game developer");
+                    throw makeRuntimeRejectMsg(workerScript, `ERROR: Invalid hostname/ip passed into scp() command: ${ip1}`);
                 }
-            } else if (arguments.length === 2) {    //scriptname, destination
+            } else if (ip1 != null) { // 2 Argument version: scriptname, destination
                 if (scriptname === undefined || ip1 === undefined) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: scp() call has incorrect number of arguments. Takes 2 or 3 arguments");
                 }
                 destServer = getServer(ip1);
                 if (destServer == null) {
-                    throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid hostname/ip passed into scp() command: " + ip);
+                    throw makeRuntimeRejectMsg(workerScript, `ERROR: Invalid hostname/ip passed into scp() command: ${ip1}`);
                 }
 
                 currServ = getServer(workerScript.serverIp);
                 if (currServ == null) {
                     throw makeRuntimeRejectMsg(workerScript, "Could not find server ip for this script. This is a bug please contact game developer");
                 }
+            } else {
+                throw makeRuntimeRejectMsg(workerScript, "ERROR: scp() call has incorrect number of arguments. Takes 2 or 3 arguments");
             }
 
-            //Scp for lit files
+            // Scp for lit files
             if (scriptname.endsWith(".lit")) {
                 var found = false;
                 for (var i = 0; i < currServ.messages.length; ++i) {
@@ -912,7 +1154,7 @@ function NetscriptFunctions(workerScript) {
                         if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.scp == null) {
                             workerScript.scriptRef.log(scriptname + " copied over to " + destServer.hostname);
                         }
-                        return true; //Already exists
+                        return true; // Already exists
                     }
                 }
                 destServer.messages.push(scriptname);
@@ -922,7 +1164,7 @@ function NetscriptFunctions(workerScript) {
                 return true;
             }
 
-            //Scp for text files
+            // Scp for text files
             if (scriptname.endsWith(".txt")) {
                 var found = false, txtFile;
                 for (var i = 0; i < currServ.textFiles.length; ++i) {
@@ -940,7 +1182,7 @@ function NetscriptFunctions(workerScript) {
 
                 for (var i = 0; i < destServer.textFiles.length; ++i) {
                     if (destServer.textFiles[i].fn === scriptname) {
-                        //Overwrite
+                        // Overwrite
                         destServer.textFiles[i].text = txtFile.text;
                         if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.scp == null) {
                             workerScript.scriptRef.log(scriptname + " copied over to " + destServer.hostname);
@@ -956,7 +1198,7 @@ function NetscriptFunctions(workerScript) {
                 return true;
             }
 
-            //Scp for script files
+            // Scp for script files
             var sourceScript = null;
             for (var i = 0; i < currServ.scripts.length; ++i) {
                 if (scriptname == currServ.scripts[i].filename) {
@@ -969,7 +1211,7 @@ function NetscriptFunctions(workerScript) {
                 return false;
             }
 
-            //Overwrite script if it already exists
+            // Overwrite script if it already exists
             for (var i = 0; i < destServer.scripts.length; ++i) {
                 if (scriptname == destServer.scripts[i].filename) {
                     if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.scp == null) {
@@ -979,14 +1221,13 @@ function NetscriptFunctions(workerScript) {
                     var oldScript = destServer.scripts[i];
                     oldScript.code = sourceScript.code;
                     oldScript.ramUsage = sourceScript.ramUsage;
-                    oldScript.module = "";
+                    oldScript.markUpdated();
                     return true;
                 }
             }
 
-            //Create new script if it does not already exist
-            var newScript = new Script();
-            newScript.filename = scriptname;
+            // Create new script if it does not already exist
+            var newScript = new Script(scriptname);
             newScript.code = sourceScript.code;
             newScript.ramUsage = sourceScript.ramUsage;
             newScript.server = destServer.ip;
@@ -996,11 +1237,8 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        ls : function(ip, grep) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("ls", CONSTANTS.ScriptScanRamCost);
-            }
-            updateDynamicRam("ls", CONSTANTS.ScriptScanRamCost);
+        ls: function(ip, grep) {
+            updateDynamicRam("ls", getRamCost("ls"));
             if (ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "ls() failed because of invalid arguments. Usage: ls(ip/hostname, [grep filter])");
             }
@@ -1010,7 +1248,7 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "ls() failed. Invalid IP or hostname passed in: " + ip);
             }
 
-            //Get the grep filter, if one exists
+            // Get the grep filter, if one exists
             var filter = false;
             if (arguments.length >= 2) {
                 filter = grep.toString();
@@ -1064,32 +1302,36 @@ function NetscriptFunctions(workerScript) {
                 }
             }
 
-            //Sort the files alphabetically then print each
+            for (var i = 0; i < server.contracts.length; ++i) {
+                if (filter) {
+                    if (server.contracts[i].fn.includes(filter)) {
+                        allFiles.push(server.contracts[i].fn);
+                    }
+                } else {
+                    allFiles.push(server.contracts[i].fn);
+                }
+            }
+
+            // Sort the files alphabetically then print each
             allFiles.sort();
             return allFiles;
         },
-        ps : function(ip=workerScript.serverIp) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("ps", CONSTANTS.ScriptScanRamCost);
-            }
-            updateDynamicRam("ps", CONSTANTS.ScriptScanRamCost);
+        ps: function(ip=workerScript.serverIp) {
+            updateDynamicRam("ps", getRamCost("ps"));
             var server = getServer(ip);
             if (server == null){
                 workerScript.scriptRef.log("ps() failed. Invalid IP or hostname passed in: " + ip);
                 throw makeRuntimeRejectMsg(workerScript, "ps() failed. Invalid IP or hostname passed in: " + ip);
             }
             const processes = [];
-            for(const i in server.runningScripts) {
+            for (const i in server.runningScripts) {
                 const script = server.runningScripts[i];
                 processes.push({filename:script.filename, threads: script.threads, args: script.args.slice()})
             }
             return processes;
         },
-        hasRootAccess : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("hasRootAccess", CONSTANTS.ScriptHasRootAccessRamCost);
-            }
-            updateDynamicRam("hasRootAccess", CONSTANTS.ScriptHasRootAccessRamCost);
+        hasRootAccess: function(ip) {
+            updateDynamicRam("hasRootAccess", getRamCost("hasRootAccess"));
             if (ip===undefined){
                 throw makeRuntimeRejectMsg(workerScript, "hasRootAccess() call has incorrect number of arguments. Takes 1 argument");
             }
@@ -1100,44 +1342,32 @@ function NetscriptFunctions(workerScript) {
             }
             return server.hasAdminRights;
         },
-        getIp : function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getIp", CONSTANTS.ScriptGetHostnameRamCost);
-            }
-            updateDynamicRam("getIp", CONSTANTS.ScriptGetHostnameRamCost);
+        getIp: function() {
+            updateDynamicRam("getIp", getRamCost("getIp"));
             var scriptServer = getServer(workerScript.serverIp);
             if (scriptServer == null) {
                 throw makeRuntimeRejectMsg(workerScript, "Could not find server. This is a bug in the game. Report to game dev");
             }
             return scriptServer.ip;
         },
-        getHostname : function(){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getHostname", CONSTANTS.ScriptGetHostnameRamCost);
-            }
-            updateDynamicRam("getHostname", CONSTANTS.ScriptGetHostnameRamCost);
+        getHostname: function() {
+            updateDynamicRam("getHostname", getRamCost("getHostname"));
             var scriptServer = getServer(workerScript.serverIp);
             if (scriptServer == null) {
                 throw makeRuntimeRejectMsg(workerScript, "Could not find server. This is a bug in the game. Report to game dev");
             }
             return scriptServer.hostname;
         },
-        getHackingLevel : function(){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getHackingLevel", CONSTANTS.ScriptGetHackingLevelRamCost);
-            }
-            updateDynamicRam("getHackingLevel", CONSTANTS.ScriptGetHackingLevelRamCost);
+        getHackingLevel: function() {
+            updateDynamicRam("getHackingLevel", getRamCost("getHackingLevel"));
             Player.updateSkillLevels();
             if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getHackingLevel == null) {
                 workerScript.scriptRef.log("getHackingLevel() returned " + Player.hacking_skill);
             }
             return Player.hacking_skill;
         },
-        getHackingMultipliers : function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getHackingMultipliers", CONSTANTS.ScriptGetMultipliersRamCost);
-            }
-            updateDynamicRam("getHackingMultipliers", CONSTANTS.ScriptGetMultipliersRamCost);
+        getHackingMultipliers: function() {
+            updateDynamicRam("getHackingMultipliers", getRamCost("getHackingMultipliers"));
             return {
                 chance: Player.hacking_chance_mult,
                 speed: Player.hacking_speed_mult,
@@ -1145,11 +1375,8 @@ function NetscriptFunctions(workerScript) {
                 growth: Player.hacking_grow_mult,
             };
         },
-        getHacknetMultipliers : function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getHacknetMultipliers", CONSTANTS.ScriptGetMultipliersRamCost);
-            }
-            updateDynamicRam("getHacknetMultipliers", CONSTANTS.ScriptGetMultipliersRamCost);
+        getHacknetMultipliers: function() {
+            updateDynamicRam("getHacknetMultipliers", getRamCost("getHacknetMultipliers"));
             return {
                 production: Player.hacknet_node_money_mult,
                 purchaseCost: Player.hacknet_node_purchase_cost_mult,
@@ -1159,170 +1386,106 @@ function NetscriptFunctions(workerScript) {
             };
         },
         getBitNodeMultipliers: function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getBitNodeMultipliers", CONSTANTS.ScriptGetMultipliersRamCost);
-            }
-            updateDynamicRam("getBitNodeMultipliers", CONSTANTS.ScriptGetMultipliersRamCost);
-            if (!hasAISF) {
+            updateDynamicRam("getBitNodeMultipliers", getRamCost("getBitNodeMultipliers"));
+            if (SourceFileFlags[5] <= 0) {
                 throw makeRuntimeRejectMsg(workerScript, "Cannot run getBitNodeMultipliers(). It requires Source-File 5 to run.");
             }
             let copy = Object.assign({}, BitNodeMultipliers);
             return copy;
         },
-        getServerMoneyAvailable : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerMoneyAvailable", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerMoneyAvailable", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerMoneyAvailable() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerMoneyAvailable() failed. Invalid IP or hostname passed in: " + ip);
-            }
+        getServerMoneyAvailable: function(ip) {
+            updateDynamicRam("getServerMoneyAvailable", getRamCost("getServerMoneyAvailable"));
+            const server = safeGetServer(ip, "getServerMoneyAvailable");
+            if (failOnHacknetServer(server, "getServerMoneyAvailable")) { return 0; }
             if (server.hostname == "home") {
-                //Return player's money
-                if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerMoneyAvailable == null) {
-                    workerScript.scriptRef.log("getServerMoneyAvailable('home') returned player's money: $" + formatNumber(Player.money.toNumber(), 2));
+                // Return player's money
+                if (workerScript.shouldLog("getServerMoneyAvailable")) {
+                    workerScript.log("getServerMoneyAvailable('home') returned player's money: $" + formatNumber(Player.money.toNumber(), 2));
                 }
                 return Player.money.toNumber();
             }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerMoneyAvailable == null) {
-                workerScript.scriptRef.log("getServerMoneyAvailable() returned " + formatNumber(server.moneyAvailable, 2) + " for " + server.hostname);
+            if (workerScript.shouldLog("getServerMoneyAvailable")) {
+                workerScript.log("getServerMoneyAvailable() returned " + formatNumber(server.moneyAvailable, 2) + " for " + server.hostname);
             }
             return server.moneyAvailable;
         },
-        getServerSecurityLevel : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerSecurityLevel", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerSecurityLevel", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerSecurityLevel() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerSecurityLevel() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerSecurityLevel == null) {
-                workerScript.scriptRef.log("getServerSecurityLevel() returned " + formatNumber(server.hackDifficulty, 3) + " for " + server.hostname);
+        getServerSecurityLevel: function(ip) {
+            updateDynamicRam("getServerSecurityLevel", getRamCost("getServerSecurityLevel"));
+            const server = safeGetServer(ip, "getServerSecurityLevel");
+            if (failOnHacknetServer(server, "getServerSecurityLevel")) { return 1; }
+            if (workerScript.shouldLog("getServerSecurityLevel")) {
+                workerScript.log("getServerSecurityLevel() returned " + formatNumber(server.hackDifficulty, 3) + " for " + server.hostname);
             }
             return server.hackDifficulty;
         },
-        getServerBaseSecurityLevel : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerBaseSecurityLevel", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerBaseSecurityLevel", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerBaseSecurityLevel() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerBaseSecurityLevel() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerBaseSecurityLevel == null) {
-                workerScript.scriptRef.log("getServerBaseSecurityLevel() returned " + formatNumber(server.baseDifficulty, 3) + " for " + server.hostname);
+        getServerBaseSecurityLevel: function(ip) {
+            updateDynamicRam("getServerBaseSecurityLevel", getRamCost("getServerBaseSecurityLevel"));
+            const server = safeGetServer(ip, "getServerBaseSecurityLevel");
+            if (failOnHacknetServer(server, "getServerBaseSecurityLevel")) { return 1; }
+            if (workerScript.shouldLog("getServerBaseSecurityLevel")) {
+                workerScript.log("getServerBaseSecurityLevel() returned " + formatNumber(server.baseDifficulty, 3) + " for " + server.hostname);
             }
             return server.baseDifficulty;
         },
-        getServerMinSecurityLevel : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerMinSecurityLevel", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerMinSecurityLevel", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerMinSecurityLevel() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerMinSecurityLevel() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerMinSecurityLevel == null) {
-                workerScript.scriptRef.log("getServerMinSecurityLevel() returned " + formatNumber(server.minDifficulty, 3) + " for " + server.hostname);
+        getServerMinSecurityLevel: function(ip) {
+            updateDynamicRam("getServerMinSecurityLevel", getRamCost("getServerMinSecurityLevel"));
+            const server = safeGetServer(ip, "getServerMinSecurityLevel");
+            if (failOnHacknetServer(server, "getServerMinSecurityLevel")) { return 1; }
+            if (workerScript.shouldLog("getServerMinSecurityLevel")) {
+                workerScript.log("getServerMinSecurityLevel() returned " + formatNumber(server.minDifficulty, 3) + " for " + server.hostname);
             }
             return server.minDifficulty;
         },
-        getServerRequiredHackingLevel : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerRequiredHackingLevel", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerRequiredHackingLevel", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerRequiredHackingLevel() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerRequiredHackingLevel() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerRequiredHackingLevel == null) {
-                workerScript.scriptRef.log("getServerRequiredHackingLevel returned " + formatNumber(server.requiredHackingSkill, 0) + " for " + server.hostname);
+        getServerRequiredHackingLevel: function(ip) {
+            updateDynamicRam("getServerRequiredHackingLevel", getRamCost("getServerRequiredHackingLevel"));
+            const server = safeGetServer(ip, "getServerRequiredHackingLevel");
+            if (failOnHacknetServer(server, "getServerRequiredHackingLevel")) { return 1; }
+            if (workerScript.shouldLog("getServerRequiredHackingLevel")) {
+                workerScript.log("getServerRequiredHackingLevel returned " + formatNumber(server.requiredHackingSkill, 0) + " for " + server.hostname);
             }
             return server.requiredHackingSkill;
         },
-        getServerMaxMoney : function(ip){
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerMaxMoney", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerMaxMoney", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerMaxMoney() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerMaxMoney() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerMaxMoney == null) {
-                workerScript.scriptRef.log("getServerMaxMoney() returned " + formatNumber(server.moneyMax, 0) + " for " + server.hostname);
+        getServerMaxMoney: function(ip) {
+            updateDynamicRam("getServerMaxMoney", getRamCost("getServerMaxMoney"));
+            const server = safeGetServer(ip, "getServerMaxMoney");
+            if (failOnHacknetServer(server, "getServerMaxMoney")) { return 0; }
+            if (workerScript.shouldLog("getServerMaxMoney")) {
+                workerScript.log("getServerMaxMoney() returned " + formatNumber(server.moneyMax, 0) + " for " + server.hostname);
             }
             return server.moneyMax;
         },
-        getServerGrowth : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerGrowth", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerGrowth", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerGrowth() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerGrowth() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerGrowth == null) {
-                workerScript.scriptRef.log("getServerGrowth() returned " + formatNumber(server.serverGrowth, 0) + " for " + server.hostname);
+        getServerGrowth: function(ip) {
+            updateDynamicRam("getServerGrowth", getRamCost("getServerGrowth"));
+            const server = safeGetServer(ip, "getServerGrowth");
+            if (failOnHacknetServer(server, "getServerGrowth")) { return 1; }
+            if (workerScript.shouldLog("getServerGrowth")) {
+                workerScript.log("getServerGrowth() returned " + formatNumber(server.serverGrowth, 0) + " for " + server.hostname);
             }
             return server.serverGrowth;
         },
-        getServerNumPortsRequired : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerNumPortsRequired", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerNumPortsRequired", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerNumPortsRequired() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerNumPortsRequired() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerNumPortsRequired == null) {
-                workerScript.scriptRef.log("getServerNumPortsRequired() returned " + formatNumber(server.numOpenPortsRequired, 0) + " for " + server.hostname);
+        getServerNumPortsRequired: function(ip) {
+            updateDynamicRam("getServerNumPortsRequired", getRamCost("getServerNumPortsRequired"));
+            const server = safeGetServer(ip, "getServerNumPortsRequired");
+            if (failOnHacknetServer(server, "getServerNumPortsRequired")) { return 5; }
+            if (workerScript.shouldLog("getServerNumPortsRequired")) {
+                workerScript.log("getServerNumPortsRequired() returned " + formatNumber(server.numOpenPortsRequired, 0) + " for " + server.hostname);
             }
             return server.numOpenPortsRequired;
         },
-        getServerRam : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getServerRam", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("getServerRam", CONSTANTS.ScriptGetServerRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getServerRam() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getServerRam() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.getServerRam == null) {
-                workerScript.scriptRef.log("getServerRam() returned [" + formatNumber(server.maxRam, 2) + "GB, " + formatNumber(server.ramUsed, 2) + "GB]");
+        getServerRam: function(ip) {
+            updateDynamicRam("getServerRam", getRamCost("getServerRam"));
+            const server = safeGetServer(ip, "getServerRam");
+            if (workerScript.shouldLog("getServerRam")) {
+                workerScript.log("getServerRam() returned [" + formatNumber(server.maxRam, 2) + "GB, " + formatNumber(server.ramUsed, 2) + "GB]");
             }
             return [server.maxRam, server.ramUsed];
         },
-        serverExists : function(ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("serverExists", CONSTANTS.ScriptGetServerRamCost);
-            }
-            updateDynamicRam("serverExists", CONSTANTS.ScriptGetServerRamCost);
+        serverExists: function(ip) {
+            updateDynamicRam("serverExists", getRamCost("serverExists"));
             return (getServer(ip) !== null);
         },
-        fileExists : function(filename,ip=workerScript.serverIp) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("fileExists", CONSTANTS.ScriptFileExistsRamCost);
-            }
-            updateDynamicRam("fileExists", CONSTANTS.ScriptFileExistsRamCost);
+        fileExists: function(filename,ip=workerScript.serverIp) {
+            updateDynamicRam("fileExists", getRamCost("fileExists"));
             if (filename === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "fileExists() call has incorrect number of arguments. Usage: fileExists(scriptname, [server])");
             }
@@ -1353,11 +1516,8 @@ function NetscriptFunctions(workerScript) {
             }
             return false;
         },
-        isRunning : function(filename,ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("isRunning", CONSTANTS.ScriptIsRunningRamCost);
-            }
-            updateDynamicRam("isRunning", CONSTANTS.ScriptIsRunningRamCost);
+        isRunning: function(filename,ip) {
+            updateDynamicRam("isRunning", getRamCost("isRunning"));
             if (filename === undefined || ip === undefined) {
                 throw makeRuntimeRejectMsg(workerScript, "isRunning() call has incorrect number of arguments. Usage: isRunning(scriptname, server, [arg1], [arg2]...)");
             }
@@ -1372,174 +1532,142 @@ function NetscriptFunctions(workerScript) {
             }
             return (findRunningScript(filename, argsForTargetScript, server) != null);
         },
-        getStockPrice : function(symbol) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getStockPrice", CONSTANTS.ScriptGetStockRamCost);
-            }
-            updateDynamicRam("getStockPrice", CONSTANTS.ScriptGetStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use getStockPrice()");
-            }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "Invalid stock symbol passed into getStockPrice()");
-            }
-            return parseFloat(stock.price.toFixed(3));
+        getStockSymbols: function() {
+            updateDynamicRam("getStockSymbols", getRamCost("getStockSymbols"));
+            checkTixApiAccess("getStockSymbols");
+            return Object.values(StockSymbols);
         },
-        getStockPosition : function(symbol) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getStockPosition", CONSTANTS.ScriptGetStockRamCost);
-            }
-            updateDynamicRam("getStockPosition", CONSTANTS.ScriptGetStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use getStockPosition()");
-            }
+        getStockPrice: function(symbol) {
+            updateDynamicRam("getStockPrice", getRamCost("getStockPrice"));
+            checkTixApiAccess("getStockPrice");
+            const stock = getStockFromSymbol(symbol, "getStockPrice");
+
+            return stock.price;
+        },
+        getStockAskPrice: function(symbol) {
+            updateDynamicRam("getStockAskPrice", getRamCost("getStockAskPrice"));
+            checkTixApiAccess("getStockAskPrice");
+            const stock = getStockFromSymbol(symbol, "getStockAskPrice");
+
+            return stock.getAskPrice();
+        },
+        getStockBidPrice: function(symbol) {
+            updateDynamicRam("getStockBidPrice", getRamCost("getStockBidPrice"));
+            checkTixApiAccess("getStockBidPrice");
+            const stock = getStockFromSymbol(symbol, "getStockBidPrice");
+
+            return stock.getBidPrice();
+        },
+        getStockPosition: function(symbol) {
+            updateDynamicRam("getStockPosition", getRamCost("getStockPosition"));
+            checkTixApiAccess("getStockPosition");
             var stock = SymbolToStockMap[symbol];
             if (stock == null) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid stock symbol passed into getStockPosition()");
             }
             return [stock.playerShares, stock.playerAvgPx, stock.playerShortShares, stock.playerAvgShortPx];
         },
-        buyStock : function(symbol, shares) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("buyStock", CONSTANTS.ScriptBuySellStockRamCost);
-            }
-            updateDynamicRam("buyStock", CONSTANTS.ScriptBuySellStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use buyStock()");
-            }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "Invalid stock symbol passed into buyStock()");
-            }
-            if (shares < 0 || isNaN(shares)) {
-                workerScript.scriptRef.log("ERROR: Invalid 'shares' argument passed to buyStock()");
-                return 0;
-            }
-            shares = Math.round(shares);
-            if (shares === 0) {return 0;}
+        getStockMaxShares: function(symbol) {
+            updateDynamicRam("getStockMaxShares", getRamCost("getStockMaxShares"));
+            checkTixApiAccess("getStockMaxShares");
+            const stock = getStockFromSymbol(symbol, "getStockMaxShares");
 
-            var totalPrice = stock.price * shares;
-            if (Player.money.lt(totalPrice + CONSTANTS.StockMarketCommission)) {
-                workerScript.scriptRef.log("Not enough money to purchase " + formatNumber(shares, 0) + " shares of " +
-                                           symbol + ". Need $" +
-                                           formatNumber(totalPrice + CONSTANTS.StockMarketCommission, 2).toString());
-                return 0;
-            }
-
-            var origTotal = stock.playerShares * stock.playerAvgPx;
-            Player.loseMoney(totalPrice + CONSTANTS.StockMarketCommission);
-            var newTotal = origTotal + totalPrice;
-            stock.playerShares += shares;
-            stock.playerAvgPx = newTotal / stock.playerShares;
-            if (routing.isOn(Page.StockMarket)) {
-                updateStockPlayerPosition(stock);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.buyStock == null) {
-                workerScript.scriptRef.log("Bought " + formatNumber(shares, 0) + " shares of " + stock.symbol + " at $" +
-                                           formatNumber(stock.price, 2) + " per share");
-            }
-            return stock.price;
+            return stock.maxShares;
         },
-        sellStock : function(symbol, shares) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("sellStock", CONSTANTS.ScriptBuySellStockRamCost);
+        getStockPurchaseCost: function(symbol, shares, posType) {
+            updateDynamicRam("getStockPurchaseCost", getRamCost("getStockPurchaseCost"));
+            checkTixApiAccess("getStockPurchaseCost");
+            const stock = getStockFromSymbol(symbol, "getStockPurchaseCost");
+            shares = Math.round(shares);
+
+            let pos;
+            const sanitizedPosType = posType.toLowerCase();
+            if (sanitizedPosType.includes("l")) {
+                pos = PositionTypes.Long;
+            } else if (sanitizedPosType.includes("s")) {
+                pos = PositionTypes.Short;
+            } else {
+                return Infinity;
             }
-            updateDynamicRam("sellStock", CONSTANTS.ScriptBuySellStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use sellStock()");
-            }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "Invalid stock symbol passed into sellStock()");
-            }
-            if (shares < 0 || isNaN(shares)) {
-                workerScript.scriptRef.log("ERROR: Invalid 'shares' argument passed to sellStock()");
+
+            const res = getBuyTransactionCost(stock, shares, pos);
+            if (res == null) { return Infinity; }
+
+            return res;
+        },
+        getStockSaleGain: function(symbol, shares, posType) {
+            updateDynamicRam("getStockSaleGain", getRamCost("getStockSaleGain"));
+            checkTixApiAccess("getStockSaleGain");
+            const stock = getStockFromSymbol(symbol, "getStockSaleGain");
+            shares = Math.round(shares);
+
+            let pos;
+            const sanitizedPosType = posType.toLowerCase();
+            if (sanitizedPosType.includes("l")) {
+                pos = PositionTypes.Long;
+            } else if (sanitizedPosType.includes("s")) {
+                pos = PositionTypes.Short;
+            } else {
                 return 0;
             }
-            shares = Math.round(shares);
-            if (shares > stock.playerShares) {shares = stock.playerShares;}
-            if (shares === 0) {return 0;}
-            var gains = stock.price * shares - CONSTANTS.StockMarketCommission;
-            Player.gainMoney(gains);
 
-            //Calculate net profit and add to script stats
-            var netProfit = ((stock.price - stock.playerAvgPx) * shares) - CONSTANTS.StockMarketCommission;
-            if (isNaN(netProfit)) {netProfit = 0;}
-            workerScript.scriptRef.onlineMoneyMade += netProfit;
-            Player.scriptProdSinceLastAug += netProfit;
+            const res = getSellTransactionGain(stock, shares, pos);
+            if (res == null) { return 0; }
 
-            stock.playerShares -= shares;
-            if (stock.playerShares == 0) {
-                stock.playerAvgPx = 0;
-            }
-            if (routing.isOn(Page.StockMarket)) {
-                updateStockPlayerPosition(stock);
-            }
-            if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.sellStock == null) {
-                workerScript.scriptRef.log("Sold " + formatNumber(shares, 0) + " shares of " + stock.symbol + " at $" +
-                                           formatNumber(stock.price, 2) + " per share. Gained " +
-                                           "$" + formatNumber(gains, 2));
-            }
-            return stock.price;
+             return res;
         },
-        shortStock(symbol, shares) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("shortStock", CONSTANTS.ScriptBuySellStockRamCost);
-            }
-            updateDynamicRam("shortStock", CONSTANTS.ScriptBuySellStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use shortStock()");
-            }
+        buyStock: function(symbol, shares) {
+            updateDynamicRam("buyStock", getRamCost("buyStock"));
+            checkTixApiAccess("buyStock");
+            const stock = getStockFromSymbol(symbol, "buyStock");
+            const res = buyStock(stock, shares, workerScript, { rerenderFn: displayStockMarketContent });
+
+            return res ? stock.price : 0;
+        },
+        sellStock: function(symbol, shares) {
+            updateDynamicRam("sellStock", getRamCost("sellStock"));
+            checkTixApiAccess("sellStock");
+            const stock = getStockFromSymbol(symbol, "sellStock");
+            const res = sellStock(stock, shares, workerScript, { rerenderFn: displayStockMarketContent });
+
+            return res ? stock.price : 0;
+        },
+        shortStock: function(symbol, shares) {
+            updateDynamicRam("shortStock", getRamCost("shortStock"));
+            checkTixApiAccess("shortStock");
             if (Player.bitNodeN !== 8) {
-                if (!(hasWallStreetSF && wallStreetSFLvl >= 2)) {
+                if (SourceFileFlags[8] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Cannot use shortStock(). You must either be in BitNode-8 or you must have Level 2 of Source-File 8");
                 }
             }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid stock symbol passed into shortStock()");
-            }
-            var res = shortStock(stock, shares, workerScript);
+            const stock = getStockFromSymbol(symbol, "shortStock");
+            const res = shortStock(stock, shares, workerScript, { rerenderFn: displayStockMarketContent });
+
             return res ? stock.price : 0;
         },
-        sellShort(symbol, shares) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("sellShort", CONSTANTS.ScriptBuySellStockRamCost);
-            }
-            updateDynamicRam("sellShort", CONSTANTS.ScriptBuySellStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use sellShort()");
-            }
+        sellShort: function(symbol, shares) {
+            updateDynamicRam("sellShort", getRamCost("sellShort"));
+            checkTixApiAccess("sellShort");
             if (Player.bitNodeN !== 8) {
-                if (!(hasWallStreetSF && wallStreetSFLvl >= 2)) {
+                if (SourceFileFlags[8] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Cannot use sellShort(). You must either be in BitNode-8 or you must have Level 2 of Source-File 8");
                 }
             }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid stock symbol passed into sellShort()");
-            }
-            var res = sellShort(stock, shares, workerScript);
+            const stock = getStockFromSymbol(symbol, "sellShort");
+            const res = sellShort(stock, shares, workerScript, { rerenderFn: displayStockMarketContent });
+
             return res ? stock.price : 0;
         },
-        placeOrder(symbol, shares, price, type, pos) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("placeOrder", CONSTANTS.ScriptBuySellStockRamCost);
-            }
-            updateDynamicRam("placeOrder", CONSTANTS.ScriptBuySellStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use placeOrder()");
-            }
+        placeOrder: function(symbol, shares, price, type, pos) {
+            updateDynamicRam("placeOrder", getRamCost("placeOrder"));
+            checkTixApiAccess("placeOrder");
             if (Player.bitNodeN !== 8) {
-                if (!(hasWallStreetSF && wallStreetSFLvl >= 3)) {
+                if (SourceFileFlags[8] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Cannot use placeOrder(). You must either be in BitNode-8 or have Level 3 of Source-File 8");
                 }
             }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid stock symbol passed into placeOrder()");
-            }
+            const stock = getStockFromSymbol(symbol, "placeOrder");
+
             var orderType, orderPos;
             type = type.toLowerCase();
             if (type.includes("limit") && type.includes("buy")) {
@@ -1565,23 +1693,15 @@ function NetscriptFunctions(workerScript) {
 
             return placeOrder(stock, shares, price, orderType, orderPos, workerScript);
         },
-        cancelOrder(symbol, shares, price, type, pos) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("cancelOrder", CONSTANTS.ScriptBuySellStockRamCost);
-            }
-            updateDynamicRam("cancelOrder", CONSTANTS.ScriptBuySellStockRamCost);
-            if (!Player.hasTixApiAccess) {
-                throw makeRuntimeRejectMsg(workerScript, "You don't have TIX API Access! Cannot use cancelOrder()");
-            }
+        cancelOrder: function(symbol, shares, price, type, pos) {
+            updateDynamicRam("cancelOrder", getRamCost("cancelOrder"));
+            checkTixApiAccess("cancelOrder");
             if (Player.bitNodeN !== 8) {
-                if (!(hasWallStreetSF && wallStreetSFLvl >= 3)) {
+                if (SourceFileFlags[8] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Cannot use cancelOrder(). You must either be in BitNode-8 or have Level 3 of Source-File 8");
                 }
             }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid stock symbol passed into cancelOrder()");
-            }
+            const stock = getStockFrom(symbol, "cancelOrder");
             if (isNaN(shares) || isNaN(price)) {
                 throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid shares or price argument passed into cancelOrder(). Must be numeric");
             }
@@ -1616,100 +1736,154 @@ function NetscriptFunctions(workerScript) {
             };
             return cancelOrder(params, workerScript);
         },
-        getStockVolatility : function(symbol) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getStockVolatility", CONSTANTS.ScriptBuySellStockRamCost);
+        getOrders: function() {
+            updateDynamicRam("getOrders", getRamCost("getOrders"));
+            checkTixApiAccess("getOrders");
+            if (Player.bitNodeN !== 8) {
+                if (SourceFileFlags[8] <= 2) {
+                    throw makeRuntimeRejectMsg(workerScript, "ERROR: Cannot use getOrders(). You must either be in BitNode-8 or have Level 3 of Source-File 8");
+                }
             }
-            updateDynamicRam("getStockVolatility", CONSTANTS.ScriptBuySellStockRamCost);
+
+            const orders = {};
+
+            const stockMarketOrders = StockMarket["Orders"];
+            for (let symbol in stockMarketOrders) {
+                const orderBook = stockMarketOrders[symbol];
+                if (orderBook.constructor === Array && orderBook.length > 0) {
+                    orders[symbol] = [];
+                    for (let i = 0; i < orderBook.length; ++i) {
+                        orders[symbol].push({
+                            shares: orderBook[i].shares,
+                            price: orderBook[i].price,
+                            type: orderBook[i].type,
+                            position: orderBook[i].pos,
+                        });
+                    }
+                }
+            }
+
+            return orders;
+        },
+        getStockVolatility: function(symbol) {
+            updateDynamicRam("getStockVolatility", getRamCost("getStockVolatility"));
             if (!Player.has4SDataTixApi) {
                 throw makeRuntimeRejectMsg(workerScript, "You don't have 4S Market Data TIX API Access! Cannot use getStockVolatility()");
             }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid stock symbol passed into getStockVolatility()");
-            }
-            return stock.mv / 100; //Convert from percentage to decimal
+            const stock = getStockFromSymbol(symbol, "getStockVolatility");
+
+            return stock.mv / 100; // Convert from percentage to decimal
         },
-        getStockForecast : function(symbol) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getStockForecast", CONSTANTS.ScriptBuySellStockRamCost);
-            }
-            updateDynamicRam("getStockForecast", CONSTANTS.ScriptBuySellStockRamCost);
+        getStockForecast: function(symbol) {
+            updateDynamicRam("getStockForecast", getRamCost("getStockForecast"));
             if (!Player.has4SDataTixApi) {
                 throw makeRuntimeRejectMsg(workerScript, "You don't have 4S Market Data TIX API Access! Cannot use getStockForecast()");
             }
-            var stock = SymbolToStockMap[symbol];
-            if (stock == null) {
-                throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid stock symbol passed into getStockForecast()");
-            }
+            const stock = getStockFromSymbol(symbol, "getStockForecast");
+
             var forecast = 50;
             stock.b ? forecast += stock.otlkMag : forecast -= stock.otlkMag;
-            return forecast / 100; //Convert from percentage to decimal
+            return forecast / 100; // Convert from percentage to decimal
+        },
+        purchase4SMarketData: function() {
+            updateDynamicRam("purchase4SMarketData", getRamCost("purchase4SMarketData"));
+            checkTixApiAccess("purchase4SMarketData");
+
+            if (Player.has4SData) {
+                if (workerScript.shouldLog("purchase4SMarketData")) {
+                    workerScript.log("Already purchased 4S Market Data");
+                }
+                return true;
+            }
+
+            if (Player.money.lt(getStockMarket4SDataCost())) {
+                if (workerScript.shouldLog("purchase4SMarketData")) {
+                    workerScript.log("Failed to purchase 4S Market Data - Not enough money");
+                }
+                return false;
+            }
+
+            Player.has4SData = true;
+            Player.loseMoney(getStockMarket4SDataCost());
+            if (workerScript.shouldLog("purchase4SMarketData")) {
+                workerScript.log("Purchased 4S Market Data");
+            }
+            displayStockMarketContent();
+            return true;
+        },
+        purchase4SMarketDataTixApi : function() {
+            updateDynamicRam("purchase4SMarketDataTixApi", getRamCost("purchase4SMarketDataTixApi"));
+            checkTixApiAccess("purchase4SMarketDataTixApi");
+
+            if (Player.has4SDataTixApi) {
+                if (workerScript.shouldLog("purchase4SMarketDataTixApi")) {
+                    workerScript.log("Already purchased 4S Market Data TIX API");
+                }
+                return true;
+            }
+
+            if (Player.money.lt(getStockMarket4STixApiCost())) {
+                if (workerScript.shouldLog("purchase4SMarketDataTixApi")) {
+                    workerScript.log("Failed to purchase 4S Market Data TIX API - Not enough money");
+                }
+                return false;
+            }
+
+            Player.has4SDataTixApi = true;
+            Player.loseMoney(getStockMarket4STixApiCost());
+            if (workerScript.shouldLog("purchase4SMarketDataTixApi")) {
+                workerScript.log("Purchased 4S Market Data TIX API");
+            }
+            displayStockMarketContent();
+            return true;
         },
         getPurchasedServerLimit : function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getPurchasedServerLimit", CONSTANTS.ScriptGetPurchasedServerLimit);
-            }
-            updateDynamicRam("getPurchasedServerLimit", CONSTANTS.ScriptGetPurchasedServerLimit);
+            updateDynamicRam("getPurchasedServerLimit", getRamCost("getPurchasedServerLimit"));
 
-            return CONSTANTS.PurchasedServerLimit;
+            return getPurchaseServerLimit();
         },
         getPurchasedServerMaxRam: function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getPurchasedServerMaxRam", CONSTANTS.ScriptGetPurchasedServerMaxRam);
-            }
-            updateDynamicRam("getPurchasedServerMaxRam", CONSTANTS.ScriptGetPurchasedServerMaxRam);
+            updateDynamicRam("getPurchasedServerMaxRam", getRamCost("getPurchasedServerMaxRam"));
 
-            return CONSTANTS.PurchasedServerMaxRam;
+            return getPurchaseServerMaxRam();
         },
         getPurchasedServerCost: function(ram) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getPurchasedServerCost", CONSTANTS.ScriptGetPurchaseServerRamCost);
-            }
-            updateDynamicRam("getPurchasedServerCost", CONSTANTS.ScriptGetPurchaseServerRamCost);
+            updateDynamicRam("getPurchasedServerCost", getRamCost("getPurchasedServerCost"));
 
-            let cost = 0;
-            try {
-                cost = getPurchaseServerRamCostGuard(ram);
-            } catch (e) {
-                workerScript.scriptRef.log("ERROR: 'getPurchasedServerCost()' " + e.message);
-                return "";
+            const cost = getPurchaseServerCost(ram);
+            if (cost === Infinity) {
+                workerScript.scriptRef.log("ERROR: 'getPurchasedServerCost()' failed due to an invalid 'ram' argument");
+                return Infinity;
             }
 
             return cost;
         },
-        purchaseServer : function(hostname, ram) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("purchaseServer", CONSTANTS.ScriptPurchaseServerRamCost);
-            }
-            updateDynamicRam("purchaseServer", CONSTANTS.ScriptPurchaseServerRamCost);
+        purchaseServer: function(hostname, ram) {
+            updateDynamicRam("purchaseServer", getRamCost("purchaseServer"));
             var hostnameStr = String(hostname);
             hostnameStr = hostnameStr.replace(/\s+/g, '');
             if (hostnameStr == "") {
-                workerScript.scriptRef.log("ERROR: Passed empty string for hostname argument of purchaseServer()");
+                workerScript.log("ERROR: Passed empty string for hostname argument of purchaseServer()");
                 return "";
             }
 
-            if (Player.purchasedServers.length >= CONSTANTS.PurchasedServerLimit) {
-                workerScript.scriptRef.log("ERROR: You have reached the maximum limit of " + CONSTANTS.PurchasedServerLimit +
-                                           " servers. You cannot purchase any more.");
+            if (Player.purchasedServers.length >= getPurchaseServerLimit()) {
+                workerScript.log(`ERROR: You have reached the maximum limit of ${getPurchaseServerLimit()} servers. You cannot purchase any more.`);
                 return "";
             }
 
-            let cost = 0;
-            try {
-                cost = getPurchaseServerRamCostGuard(ram);
-            } catch (e) {
-                workerScript.scriptRef.log("ERROR: 'purchaseServer()' " + e.message);
-                return "";
+            const cost = getPurchaseServerCost(ram);
+            if (cost === Infinity) {
+                workerScript.log("ERROR: 'purchaseServer()' failed due to an invalid 'ram' argument");
+                return Infinity;
             }
 
             if (Player.money.lt(cost)) {
-                workerScript.scriptRef.log("ERROR: Not enough money to purchase server. Need $" + formatNumber(cost, 2));
+                workerScript.log("ERROR: Not enough money to purchase server. Need $" + formatNumber(cost, 2));
                 return "";
             }
-            var newServ = new Server({
-                ip: createRandomIp(),
+            var newServ = safetlyCreateUniqueServer({
+                ip: createUniqueRandomIp(),
                 hostname: hostnameStr,
                 organizationName: "",
                 isConnectedTo: false,
@@ -1729,11 +1903,8 @@ function NetscriptFunctions(workerScript) {
             }
             return newServ.hostname;
         },
-        deleteServer : function(hostname) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("deleteServer", CONSTANTS.ScriptPurchaseServerRamCost);
-            }
-            updateDynamicRam("deleteServer", CONSTANTS.ScriptPurchaseServerRamCost);
+        deleteServer: function(hostname) {
+            updateDynamicRam("deleteServer", getRamCost("deleteServer"));
             var hostnameStr = String(hostname);
             hostnameStr = hostnameStr.replace(/\s\s+/g, '');
             var server = GetServerByHostname(hostnameStr);
@@ -1750,25 +1921,25 @@ function NetscriptFunctions(workerScript) {
 
             var ip = server.ip;
 
-            //Can't delete server you're currently connected to
+            // Can't delete server you're currently connected to
             if (server.isConnectedTo) {
                 workerScript.scriptRef.log("ERROR: deleteServer() failed because you are currently connected to the server you are trying to delete");
                 return false;
             }
 
-            //A server cannot delete itself
+            // A server cannot delete itself
             if (ip === workerScript.serverIp) {
                 workerScript.scriptRef.log("ERROR: Cannot call deleteServer() on self. deleteServer() failed");
                 return false;
             }
 
-            //Delete all scripts running on server
+            // Delete all scripts running on server
             if (server.runningScripts.length > 0) {
                 workerScript.scriptRef.log("ERROR: Cannot delete server " + server.hostname + " because it still has scripts running.");
                 return false;
             }
 
-            //Delete from player's purchasedServers array
+            // Delete from player's purchasedServers array
             var found = false;
             for (var i = 0; i < Player.purchasedServers.length; ++i) {
                 if (ip == Player.purchasedServers[i]) {
@@ -1784,10 +1955,10 @@ function NetscriptFunctions(workerScript) {
                 return false;
             }
 
-            //Delete from all servers
+            // Delete from all servers
             delete AllServers[ip];
 
-            //Delete from home computer
+            // Delete from home computer
             found = false;
             var homeComputer = Player.getHomeComputer();
             for (var i = 0; i < homeComputer.serversOnNetwork.length; ++i) {
@@ -1799,16 +1970,13 @@ function NetscriptFunctions(workerScript) {
                     return true;
                 }
             }
-            //Wasn't found on home computer
+            // Wasn't found on home computer
             workerScript.scriptRef.log("ERROR: Could not find server " + server.hostname +
                                        "as a purchased server. This is likely a bug please contact game dev");
             return false;
         },
-        getPurchasedServers : function(hostname=true) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getPurchasedServers", CONSTANTS.ScriptPurchaseServerRamCost);
-            }
-            updateDynamicRam("getPurchasedServers", CONSTANTS.ScriptPurchaseServerRamCost);
+        getPurchasedServers: function(hostname=true) {
+            updateDynamicRam("getPurchasedServers", getRamCost("getPurchasedServers"));
             var res = [];
             Player.purchasedServers.forEach(function(ip) {
                 if (hostname) {
@@ -1823,13 +1991,10 @@ function NetscriptFunctions(workerScript) {
             });
             return res;
         },
-        write : function(port, data="", mode="a") {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("write", CONSTANTS.ScriptReadWriteRamCost);
-            }
-            updateDynamicRam("write", CONSTANTS.ScriptReadWriteRamCost);
-            if (!isNaN(port)) { //Write to port
-                //Port 1-10
+        write: function(port, data="", mode="a") {
+            updateDynamicRam("write", getRamCost("write"));
+            if (!isNaN(port)) { // Write to port
+                // Port 1-10
                 port = Math.round(port);
                 if (port < 1 || port > CONSTANTS.NumNetscriptPorts) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Trying to write to invalid port: " + port + ". Only ports 1-" + CONSTANTS.NumNetscriptPorts + " are valid.");
@@ -1839,32 +2004,55 @@ function NetscriptFunctions(workerScript) {
                     throw makeRuntimeRejectMsg(workerScript, "Could not find port: " + port + ". This is a bug contact the game developer");
                 }
                 return port.write(data);
-            } else if (isString(port)) { //Write to text file
-                var fn = port;
-                var server = getServer(workerScript.serverIp);
+            } else if (isString(port)) { // Write to script or text file
+                const fn = port;
+                if (!isValidFilePath(fn)) {
+                    throw makeRuntimeRejectMsg(workerScript, `write() failed due to invalid filepath: ${fn}`);
+                }
+
+                // Coerce 'data' to be a string
+                try {
+                    data = String(data);
+                } catch (e) {
+                    throw makeRuntimeRejectMsg(workerScript, `write() failed because of invalid data (${e}). Data being written must be convertible to a string`);
+                }
+
+                const server = workerScript.getServer();
                 if (server == null) {
                     throw makeRuntimeRejectMsg(workerScript, "Error getting Server for this script in write(). This is a bug please contact game dev");
                 }
-                var txtFile = getTextFile(fn, server);
-                if (txtFile == null) {
-                    txtFile = createTextFile(fn, data, server);
-                    return true;
-                }
-                if (mode === "w") {
-                    txtFile.write(data);
+                if (isScriptFilename(fn)) {
+                    // Write to script
+                    let script = workerScript.getScriptOnServer(fn);
+                    if (script == null) {
+                        // Create a new script
+                        script = new Script(fn, data, server.ip, server.scripts);
+                        server.scripts.push(script);
+                        return true;
+                    }
+                    mode === "w" ? script.code = data : script.code += data;
+                    script.updateRamUsage(server.scripts);
+                    script.markUpdated();
                 } else {
-                    txtFile.append(data);
+                    // Write to text file
+                    let txtFile = getTextFile(fn, server);
+                    if (txtFile == null) {
+                        txtFile = createTextFile(fn, data, server);
+                        return true;
+                    }
+                    if (mode === "w") {
+                        txtFile.write(data);
+                    } else {
+                        txtFile.append(data);
+                    }
                 }
                 return true;
             } else {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument passed in for write: " + port);
             }
         },
-        tryWrite : function(port, data="") {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("tryWrite", CONSTANTS.ScriptReadWriteRamCost);
-            }
-            updateDynamicRam("tryWrite", CONSTANTS.ScriptReadWriteRamCost);
+        tryWrite: function(port, data="") {
+            updateDynamicRam("tryWrite", getRamCost("tryWrite"));
             if (!isNaN(port)) {
                 port = Math.round(port);
                 if (port < 1 || port > CONSTANTS.NumNetscriptPorts) {
@@ -1879,13 +2067,10 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument passed in for tryWrite: " + port);
             }
         },
-        read : function(port) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("read", CONSTANTS.ScriptReadWriteRamCost);
-            }
-            updateDynamicRam("read", CONSTANTS.ScriptReadWriteRamCost);
-            if (!isNaN(port)) { //Read from port
-                //Port 1-10
+        read: function(port) {
+            updateDynamicRam("read", getRamCost("read"));
+            if (!isNaN(port)) { // Read from port
+                // Port 1-10
                 port = Math.round(port);
                 if (port < 1 || port > CONSTANTS.NumNetscriptPorts) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Trying to read from invalid port: " + port + ". Only ports 1-" + CONSTANTS.NumNetscriptPorts + " are valid.");
@@ -1895,27 +2080,34 @@ function NetscriptFunctions(workerScript) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Could not find port: " + port + ". This is a bug contact the game developer");
                 }
                 return port.read();
-            } else if (isString(port)) { //Read from text file
-                var fn = port;
-                var server = getServer(workerScript.serverIp);
+            } else if (isString(port)) { // Read from script or text file
+                let fn = port;
+                let server = getServer(workerScript.serverIp);
                 if (server == null) {
                     throw makeRuntimeRejectMsg(workerScript, "Error getting Server for this script in read(). This is a bug please contact game dev");
                 }
-                var txtFile = getTextFile(fn, server);
-                if (txtFile !== null) {
-                    return txtFile.text;
+                if (isScriptFilename(fn)) {
+                    // Read from script
+                    let script = workerScript.getScriptOnServer(fn);
+                    if (script == null) {
+                        return "";
+                    }
+                    return script.code;
                 } else {
-                    return "";
+                    // Read from text file
+                    let txtFile = getTextFile(fn, server);
+                    if (txtFile !== null) {
+                        return txtFile.text;
+                    } else {
+                        return "";
+                    }
                 }
             } else {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid argument passed in for read(): " + port);
             }
         },
-        peek : function(port) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("peek", CONSTANTS.ScriptReadWriteRamCost);
-            }
-            updateDynamicRam("peek", CONSTANTS.ScriptReadWriteRamCost);
+        peek: function(port) {
+            updateDynamicRam("peek", getRamCost("peek"));
             if (isNaN(port)) {
                 throw makeRuntimeRejectMsg(workerScript, "ERROR: peek() called with invalid argument. Must be a port number between 1 and " + CONSTANTS.NumNetscriptPorts);
             }
@@ -1929,12 +2121,9 @@ function NetscriptFunctions(workerScript) {
             }
             return port.peek();
         },
-        clear : function(port) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("clear", CONSTANTS.ScriptReadWriteRamCost);
-            }
-            updateDynamicRam("clear", CONSTANTS.ScriptReadWriteRamCost);
-            if (!isNaN(port)) { //Clear port
+        clear: function(port) {
+            updateDynamicRam("clear", getRamCost("clear"));
+            if (!isNaN(port)) { // Clear port
                 port = Math.round(port);
                 if (port < 1 || port > CONSTANTS.NumNetscriptPorts) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Trying to clear invalid port: " + port + ". Only ports 1-" + CONSTANTS.NumNetscriptPorts + " are valid");
@@ -1944,7 +2133,7 @@ function NetscriptFunctions(workerScript) {
                     throw makeRuntimeRejectMsg(workerScript, "ERROR: Could not find port: " + port + ". This is a bug contact the game developer");
                 }
                 return port.clear();
-            } else if (isString(port)) { //Clear text file
+            } else if (isString(port)) { // Clear text file
                 var fn = port;
                 var server = getServer(workerScript.serverIp);
                 if (server == null) {
@@ -1959,11 +2148,8 @@ function NetscriptFunctions(workerScript) {
             }
             return 0;
         },
-        getPortHandle : function(port) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getPortHandle", CONSTANTS.ScriptReadWriteRamCost * 10);
-            }
-            updateDynamicRam("getPortHandle", CONSTANTS.ScriptReadWriteRamCost * 10);
+        getPortHandle: function(port) {
+            updateDynamicRam("getPortHandle", getRamCost("getPortHandle"));
             if (isNaN(port)) {
                 throw makeRuntimeRejectMsg(workerScript, "ERROR: Invalid argument passed into getPortHandle(). Must be an integer between 1 and " + CONSTANTS.NumNetscriptPorts);
             }
@@ -1977,60 +2163,23 @@ function NetscriptFunctions(workerScript) {
             }
             return port;
         },
-        rm : function(fn) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("rm", CONSTANTS.ScriptReadWriteRamCost);
+        rm: function(fn, ip) {
+            updateDynamicRam("rm", getRamCost("rm"));
+
+            if (ip == null || ip === "") {
+                ip = workerScript.serverIp;
             }
-            updateDynamicRam("rm", CONSTANTS.ScriptReadWriteRamCost);
-            var s = getServer(workerScript.serverIp);
-            if (s == null) {
-                throw makeRuntimeRejectMsg(workerScript, "Error getting Server for this script in clear(). This is a bug please contact game dev");
+            const s = safeGetServer(ip, "rm");
+
+            const status = s.removeFile(fn);
+            if (!status.res) {
+                workerScript.log(status.msg);
             }
 
-            if (fn.includes(".exe")) {
-                for (var i = 0; i < s.programs.length; ++i) {
-                    if (s.programs[i] === fn) {
-                       s.programs.splice(i, 1);
-                       return true;
-                    }
-                }
-            } else if (isScriptFilename(fn)) {
-                for (var i = 0; i < s.scripts.length; ++i) {
-                    if (s.scripts[i].filename === fn) {
-                        //Check that the script isnt currently running
-                        for (var j = 0; j < s.runningScripts.length; ++j) {
-                            if (s.runningScripts[j].filename === fn) {
-                                workerScript.scriptRef.log("Cannot delete a script that is currently running!");
-                                return false;
-                            }
-                        }
-                        s.scripts.splice(i, 1);
-                        return true;
-                    }
-                }
-            } else if (fn.endsWith(".lit")) {
-                for (var i = 0; i < s.messages.length; ++i) {
-                    var f = s.messages[i];
-                    if (!(f instanceof Message) && isString(f) && f === fn) {
-                        s.messages.splice(i, 1);
-                        return true;
-                    }
-                }
-            } else if (fn.endsWith(".txt")) {
-                for (var i = 0; i < s.textFiles.length; ++i) {
-                    if (s.textFiles[i].fn === fn) {
-                        s.textFiles.splice(i, 1);
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return status.res;
         },
-        scriptRunning : function(scriptname, ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("scriptRunning", CONSTANTS.ScriptArbScriptRamCost);
-            }
-            updateDynamicRam("scriptRunning", CONSTANTS.ScriptArbScriptRamCost);
+        scriptRunning: function(scriptname, ip) {
+            updateDynamicRam("scriptRunning", getRamCost("scriptRunning"));
             var server = getServer(ip);
             if (server == null) {
                 workerScript.scriptRef.log("scriptRunning() failed. Invalid IP or hostname passed in: " + ip);
@@ -2043,11 +2192,8 @@ function NetscriptFunctions(workerScript) {
             }
             return false;
         },
-        scriptKill : function(scriptname, ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("scriptKill", CONSTANTS.ScriptArbScriptRamCost);
-            }
-            updateDynamicRam("scriptKill", CONSTANTS.ScriptArbScriptRamCost);
+        scriptKill: function(scriptname, ip) {
+            updateDynamicRam("scriptKill", getRamCost("scriptKill"));
             var server = getServer(ip);
             if (server == null) {
                 workerScript.scriptRef.log("scriptKill() failed. Invalid IP or hostname passed in: " + ip);
@@ -2062,15 +2208,11 @@ function NetscriptFunctions(workerScript) {
             }
             return suc;
         },
-        getScriptName : function() {
-            if (workerScript.checkingRam) {return 0;}
+        getScriptName: function() {
             return workerScript.name;
         },
-        getScriptRam : function (scriptname, ip=workerScript.serverIp) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getScriptRam", CONSTANTS.ScriptGetScriptRamCost);
-            }
-            updateDynamicRam("getScriptRam", CONSTANTS.ScriptGetScriptRamCost);
+        getScriptRam: function(scriptname, ip=workerScript.serverIp) {
+            updateDynamicRam("getScriptRam", getRamCost("getScriptRam"));
             var server = getServer(ip);
             if (server == null) {
                 workerScript.scriptRef.log("getScriptRam() failed. Invalid IP or hostname passed in: " + ip);
@@ -2083,55 +2225,44 @@ function NetscriptFunctions(workerScript) {
             }
             return 0;
         },
-        getHackTime : function(ip, hack, int) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getHackTime", CONSTANTS.ScriptGetHackTimeRamCost);
-            }
-            updateDynamicRam("getHackTime", CONSTANTS.ScriptGetHackTimeRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getHackTime() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getHackTime() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            return calculateHackingTime(server, hack, int); //Returns seconds
+        getHackTime: function(ip, hack, int) {
+            updateDynamicRam("getHackTime", getRamCost("getHackTime"));
+            const server = safeGetServer(ip, "getHackTime");
+            if (failOnHacknetServer(server, "getHackTime")) { return Infinity; }
+
+            return calculateHackingTime(server, hack, int); // Returns seconds
         },
-        getGrowTime : function(ip, hack, int) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getGrowTime", CONSTANTS.ScriptGetHackTimeRamCost);
-            }
-            updateDynamicRam("getGrowTime", CONSTANTS.ScriptGetHackTimeRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getGrowTime() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getGrowTime() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            return calculateGrowTime(server, hack, int); //Returns seconds
+        getGrowTime: function(ip, hack, int) {
+            updateDynamicRam("getGrowTime", getRamCost("getGrowTime"));
+            const server = safeGetServer(ip, "getGrowTime");
+            if (failOnHacknetServer(server, "getGrowTime")) { return Infinity; }
+
+            return calculateGrowTime(server, hack, int); // Returns seconds
         },
-        getWeakenTime : function(ip, hack, int) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getWeakenTime", CONSTANTS.ScriptGetHackTimeRamCost);
-            }
-            updateDynamicRam("getWeakenTime", CONSTANTS.ScriptGetHackTimeRamCost);
-            var server = getServer(ip);
-            if (server == null) {
-                workerScript.scriptRef.log("getWeakenTime() failed. Invalid IP or hostname passed in: " + ip);
-                throw makeRuntimeRejectMsg(workerScript, "getWeakenTime() failed. Invalid IP or hostname passed in: " + ip);
-            }
-            return calculateWeakenTime(server, hack, int); //Returns seconds
+        getWeakenTime: function(ip, hack, int) {
+            updateDynamicRam("getWeakenTime", getRamCost("getWeakenTime"));
+            const server = safeGetServer(ip, "getWeakenTime");
+            if (failOnHacknetServer(server, "getWeakenTime")) { return Infinity; }
+
+            return calculateWeakenTime(server, hack, int); // Returns seconds
         },
-        getScriptIncome : function(scriptname, ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getScriptIncome", CONSTANTS.ScriptGetScriptRamCost);
-            }
-            updateDynamicRam("getScriptIncome", CONSTANTS.ScriptGetScriptRamCost);
+        getScriptIncome: function(scriptname, ip) {
+            updateDynamicRam("getScriptIncome", getRamCost("getScriptIncome"));
             if (arguments.length === 0) {
-                //Get total script income
                 var res = [];
-                res.push(updateActiveScriptsItems());
-                res.push(Player.scriptProdSinceLastAug / (Player.playtimeSinceLastAug/1000));
+
+                // First element is total income of all currently running scripts
+                let total = 0;
+                for (const script of workerScripts.values()) {
+                    total += (script.scriptRef.onlineMoneyMade / script.scriptRef.onlineRunningTime);
+                }
+                res.push(total);
+
+                // Second element is total income you've earned from scripts since you installed Augs
+                res.push(Player.scriptProdSinceLastAug / (Player.playtimeSinceLastAug / 1000));
                 return res;
             } else {
-                //Get income for a particular script
+                // Get income for a particular script
                 var server = getServer(ip);
                 if (server == null) {
                     workerScript.scriptRef.log("getScriptIncome() failed. Invalid IP or hostnamed passed in: " + ip);
@@ -2149,19 +2280,16 @@ function NetscriptFunctions(workerScript) {
                 return runningScriptObj.onlineMoneyMade / runningScriptObj.onlineRunningTime;
             }
         },
-        getScriptExpGain : function(scriptname, ip) {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getScriptExpGain", CONSTANTS.ScriptGetScriptRamCost);
-            }
-            updateDynamicRam("getScriptExpGain", CONSTANTS.ScriptGetScriptRamCost);
+        getScriptExpGain: function(scriptname, ip) {
+            updateDynamicRam("getScriptExpGain", getRamCost("getScriptExpGain"));
             if (arguments.length === 0) {
                 var total = 0;
-                for (var i = 0; i < workerScripts.length; ++i) {
-                    total += (workerScripts[i].scriptRef.onlineExpGained / workerScripts[i].scriptRef.onlineRunningTime);
+                for (const ws of workerScripts.values()) {
+                    total += (ws.scriptRef.onlineExpGained / ws.scriptRef.onlineRunningTime);
                 }
                 return total;
             } else {
-                //Get income for a particular script
+                // Get income for a particular script
                 var server = getServer(ip);
                 if (server == null) {
                     workerScript.scriptRef.log("getScriptExpGain() failed. Invalid IP or hostnamed passed in: " + ip);
@@ -2179,53 +2307,87 @@ function NetscriptFunctions(workerScript) {
                 return runningScriptObj.onlineExpGained / runningScriptObj.onlineRunningTime;
             }
         },
-        getTimeSinceLastAug : function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getTimeSinceLastAug", CONSTANTS.ScriptGetHackTimeRamCost);
+        nFormat: function(n, format) {
+            if (isNaN(n) || isNaN(parseFloat(n)) || typeof format !== "string") {
+                return "";
             }
-            updateDynamicRam("getTimeSinceLastAug", CONSTANTS.ScriptGetHackTimeRamCost);
+
+            return numeralWrapper.format(parseFloat(n), format);
+        },
+        getTimeSinceLastAug: function() {
+            updateDynamicRam("getTimeSinceLastAug", getRamCost("getTimeSinceLastAug"));
             return Player.playtimeSinceLastAug;
         },
         prompt : function(txt) {
-            if (workerScript.checkingRam) {return 0;}
-            if (yesNoBoxOpen) {
-                workerScript.scriptRef.log("ERROR: confirm() failed because a pop-up dialog box is already open");
-                return false;
-            }
             if (!isString(txt)) {txt = String(txt);}
-            var yesBtn = yesNoBoxGetYesButton(), noBtn = yesNoBoxGetNoButton();
-            yesBtn.innerHTML = "Yes";
-            noBtn.innerHTML = "No";
+
+            // The id for this popup will consist of the first 20 characters of the prompt string..
+            // Thats hopefully good enough to be unique
+            const popupId = `prompt-popup-${txt.slice(0, 20)}`;
+            const textElement = createElement("p", { innerHTML: txt });
+
             return new Promise(function(resolve, reject) {
-                yesBtn.addEventListener("click", ()=>{
-                    yesNoBoxClose();
-                    resolve(true);
+                const yesBtn = createElement("button", {
+                    class: "popup-box-button",
+                    innerText: "Yes",
+                    clickListener: () => {
+                        removeElementById(popupId);
+                        resolve(true);
+                    },
                 });
-                noBtn.addEventListener("click", ()=>{
-                    yesNoBoxClose();
-                    resolve(false);
+
+                const noBtn = createElement("button", {
+                    class: "popup-box-button",
+                    innerText: "No",
+                    clickListener: () => {
+                        removeElementById(popupId);
+                        resolve(false);
+                    },
                 });
-                yesNoBoxCreate(txt);
+
+                createPopup(popupId, [textElement, yesBtn, noBtn]);
+            });
+        },
+        wget: async function(url, target, ip=workerScript.serverIp) {
+            if (!isScriptFilename(target) && !target.endsWith(".txt")) {
+                workerScript.log(`ERROR: wget() failed because of an invalid target file: ${target}. Target file must be a script or text file`);
+                return Promise.resolve(false);
+            }
+            var s = safeGetServer(ip, "wget");
+            return new Promise(function(resolve, reject) {
+                $.get(url, function(data) {
+                    let res;
+                    if (isScriptFilename(target)) {
+                        res = s.writeToScriptFile(target, data);
+                    } else {
+                        res = s.writeToTextFile(target, data);
+                    }
+                    if (!res.success) {
+                        workerScript.log("ERROR: wget() failed");
+                        return resolve(false);
+                    }
+                    if (res.overwritten) {
+                         workerScript.log(`wget() successfully retrieved content and overwrote ${target} on ${ip}`);
+                         return resolve(true);
+                    }
+                    workerScript.log(`wget successfully retrieved content to new file ${target} on ${ip}`);
+                    return resolve(true);
+                }, 'text').fail(function(e) {
+                    workerScript.log(`ERROR: wget() failed: ${JSON.stringify(e)}`);
+                    return resolve(false)
+                });
             });
         },
         getFavorToDonate: function() {
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getFavorToDonate", CONSTANTS.ScriptGetFavorToDonate);
-            }
-            updateDynamicRam("getFavorToDonate", CONSTANTS.ScriptGetFavorToDonate);
+            updateDynamicRam("getFavorToDonate", getRamCost("getFavorToDonate"));
             return Math.floor(CONSTANTS.BaseFavorToDonate * BitNodeMultipliers.RepToDonateToFaction);
         },
 
         /* Singularity Functions */
-        universityCourse : function(universityName, className) {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("universityCourse", ramCost);
-            }
-            updateDynamicRam("universityCourse", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        universityCourse: function(universityName, className) {
+            updateDynamicRam("universityCourse", getRamCost("universityCourse"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run universityCourse(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return false;
                 }
@@ -2243,30 +2405,30 @@ function NetscriptFunctions(workerScript) {
 
             var costMult, expMult;
             switch(universityName.toLowerCase()) {
-                case Locations.AevumSummitUniversity.toLowerCase():
-                    if (Player.city != Locations.Aevum) {
+                case LocationName.AevumSummitUniversity.toLowerCase():
+                    if (Player.city != CityName.Aevum) {
                         workerScript.scriptRef.log("ERROR: You cannot study at Summit University because you are not in Aevum. universityCourse() failed");
                         return false;
                     }
-                    Player.location = Locations.AevumSummitUniversity;
+                    Player.gotoLocation(LocationName.AevumSummitUniversity);
                     costMult = 4;
                     expMult = 3;
                     break;
-                case Locations.Sector12RothmanUniversity.toLowerCase():
-                    if (Player.city != Locations.Sector12) {
+                case LocationName.Sector12RothmanUniversity.toLowerCase():
+                    if (Player.city != CityName.Sector12) {
                         workerScript.scriptRef.log("ERROR: You cannot study at Rothman University because you are not in Sector-12. universityCourse() failed");
                         return false;
                     }
-                    Player.location = Locations.Sector12RothmanUniversity;
+                    Player.location = LocationName.Sector12RothmanUniversity;
                     costMult = 3;
                     expMult = 2;
                     break;
-                case Locations.VolhavenZBInstituteOfTechnology.toLowerCase():
-                    if (Player.city != Locations.Volhaven) {
+                case LocationName.VolhavenZBInstituteOfTechnology.toLowerCase():
+                    if (Player.city != CityName.Volhaven) {
                         workerScript.scriptRef.log("ERROR: You cannot study at ZB Institute of Technology because you are not in Volhaven. universityCourse() failed");
                         return false;
                     }
-                    Player.location = Locations.VolhavenZBInstituteOfTechnology;
+                    Player.location = LocationName.VolhavenZBInstituteOfTechnology;
                     costMult = 5;
                     expMult = 4;
                     break;
@@ -2306,15 +2468,10 @@ function NetscriptFunctions(workerScript) {
             return true;
         },
 
-        gymWorkout : function(gymName, stat) {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("gymWorkout", ramCost);
-            }
-            updateDynamicRam("gymWorkout", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        gymWorkout: function(gymName, stat) {
+            updateDynamicRam("gymWorkout", getRamCost("gymWorkout"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run gymWorkout(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return false;
                 }
@@ -2331,48 +2488,48 @@ function NetscriptFunctions(workerScript) {
             }
             var costMult, expMult;
             switch(gymName.toLowerCase()) {
-                case Locations.AevumCrushFitnessGym.toLowerCase():
-                    if (Player.city != Locations.Aevum) {
+                case LocationName.AevumCrushFitnessGym.toLowerCase():
+                    if (Player.city != CityName.Aevum) {
                         workerScript.scriptRef.log("ERROR: You cannot workout at Crush Fitness because you are not in Aevum. gymWorkout() failed");
                         return false;
                     }
-                    Player.location = Locations.AevumCrushFitnessGym;
+                    Player.location = LocationName.AevumCrushFitnessGym;
                     costMult = 3;
                     expMult = 2;
                     break;
-                case Locations.AevumSnapFitnessGym.toLowerCase():
-                    if (Player.city != Locations.Aevum) {
+                case LocationName.AevumSnapFitnessGym.toLowerCase():
+                    if (Player.city != CityName.Aevum) {
                         workerScript.scriptRef.log("ERROR: You cannot workout at Snap Fitness because you are not in Aevum. gymWorkout() failed");
                         return false;
                     }
-                    Player.location = Locations.AevumSnapFitnessGym;
+                    Player.location = LocationName.AevumSnapFitnessGym;
                     costMult = 10;
                     expMult = 5;
                     break;
-                case Locations.Sector12IronGym.toLowerCase():
-                    if (Player.city != Locations.Sector12) {
+                case LocationName.Sector12IronGym.toLowerCase():
+                    if (Player.city != CityName.Sector12) {
                         workerScript.scriptRef.log("ERROR: You cannot workout at Iron Gym because you are not in Sector-12. gymWorkout() failed");
                         return false;
                     }
-                    Player.location = Locations.Sector12IronGym;
+                    Player.location = LocationName.Sector12IronGym;
                     costMult = 1;
                     expMult = 1;
                     break;
-                case Locations.Sector12PowerhouseGym.toLowerCase():
-                    if (Player.city != Locations.Sector12) {
+                case LocationName.Sector12PowerhouseGym.toLowerCase():
+                    if (Player.city != CityName.Sector12) {
                         workerScript.scriptRef.log("ERROR: You cannot workout at Powerhouse Gym because you are not in Sector-12. gymWorkout() failed");
                         return false;
                     }
-                    Player.location = Locations.Sector12PowerhouseGym;
+                    Player.location = LocationName.Sector12PowerhouseGym;
                     costMult = 20;
                     expMult = 10;
                     break;
-                case Locations.VolhavenMilleniumFitnessGym:
-                    if (Player.city != Locations.Volhaven) {
+                case LocationName.VolhavenMilleniumFitnessGym.toLowerCase():
+                    if (Player.city != CityName.Volhaven) {
                         workerScript.scriptRef.log("ERROR: You cannot workout at Millenium Fitness Gym because you are not in Volhaven. gymWorkout() failed");
                         return false;
                     }
-                    Player.location = Locations.VolhavenMilleniumFitnessGym;
+                    Player.location = LocationName.VolhavenMilleniumFitnessGym;
                     costMult = 7;
                     expMult = 4;
                     break;
@@ -2408,27 +2565,22 @@ function NetscriptFunctions(workerScript) {
             return true;
         },
 
-        travelToCity(cityname) {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("travelToCity", ramCost);
-            }
-            updateDynamicRam("travelToCity", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        travelToCity: function(cityname) {
+            updateDynamicRam("travelToCity", getRamCost("travelToCity"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run travelToCity(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return false;
                 }
             }
 
             switch(cityname) {
-                case Locations.Aevum:
-                case Locations.Chongqing:
-                case Locations.Sector12:
-                case Locations.NewTokyo:
-                case Locations.Ishima:
-                case Locations.Volhaven:
+                case CityName.Aevum:
+                case CityName.Chongqing:
+                case CityName.Sector12:
+                case CityName.NewTokyo:
+                case CityName.Ishima:
+                case CityName.Volhaven:
                     if(Player.money.lt(CONSTANTS.TravelCost)) {
                         workerScript.scriptRef.log("ERROR: not enough money to travel with travelToCity().");
                         throw makeRuntimeRejectMsg(workerScript, "ERROR: not enough money to travel with travelToCity().");
@@ -2445,15 +2597,10 @@ function NetscriptFunctions(workerScript) {
             }
         },
 
-        purchaseTor() {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("purchaseTor", ramCost);
-            }
-            updateDynamicRam("purchaseTor", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        purchaseTor: function() {
+            updateDynamicRam("purchaseTor", getRamCost("purchaseTor"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run purchaseTor(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return false;
                 }
@@ -2470,16 +2617,12 @@ function NetscriptFunctions(workerScript) {
             }
             Player.loseMoney(CONSTANTS.TorRouterCost);
 
-            var darkweb = new Server({
-                ip:createRandomIp(), hostname:"darkweb", organizationName:"",
+            var darkweb = safetlyCreateUniqueServer({
+                ip: createUniqueRandomIp(), hostname:"darkweb", organizationName:"",
                 isConnectedTo:false, adminRights:false, purchasedByPlayer:false, maxRam:1
             });
             AddToAllServers(darkweb);
             SpecialServerIps.addIp("Darkweb Server", darkweb.ip);
-
-            const purchaseTor = document.getElementById("location-purchase-tor");
-            purchaseTor.setAttribute("class", "a-link-button-bought");
-            purchaseTor.innerHTML = "TOR Router - Purchased";
 
             Player.getHomeComputer().serversOnNetwork.push(darkweb.ip);
             darkweb.serversOnNetwork.push(Player.getHomeComputer().ip);
@@ -2489,15 +2632,10 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        purchaseProgram(programName) {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("purchaseProgram", ramCost);
-            }
-            updateDynamicRam("purchaseProgram", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        purchaseProgram: function(programName) {
+            updateDynamicRam("purchaseProgram", getRamCost("purchaseProgram"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run purchaseProgram(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return false;
                 }
@@ -2541,15 +2679,10 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        getStats : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost / 4;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getStats", ramCost);
-            }
-            updateDynamicRam("getStats", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        getStats: function() {
+            updateDynamicRam("getStats", getRamCost("getStats"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getStats(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return {};
                 }
@@ -2565,32 +2698,42 @@ function NetscriptFunctions(workerScript) {
                 intelligence:   Player.intelligence
             }
         },
-        getCharacterInformation : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost / 4;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getCharacterInformation", ramCost);
-            }
-            updateDynamicRam("getCharacterInformation", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        getCharacterInformation: function() {
+            updateDynamicRam("getCharacterInformation", getRamCost("getCharacterInformation"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getCharacterInformation(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return {};
                 }
             }
 
-            var companyPositionTitle = "";
-            if (Player.companyPosition instanceof CompanyPosition) {
-                companyPositionTitle = Player.companyPosition.positionName;
-            }
             return {
                 bitnode:            Player.bitNodeN,
-                company:            Player.companyName,
-                jobTitle:           companyPositionTitle,
                 city:               Player.city,
                 factions:           Player.factions.slice(),
-                tor:                SpecialServerIps.hasOwnProperty("Darkweb Server"),
+                hp:                 Player.hp,
+                jobs:               Object.keys(Player.jobs),
+                jobTitles:          Object.values(Player.jobs),
+                maxHp:              Player.max_hp,
+                mult: {
+                    agility:        Player.agility_mult,
+                    agilityExp:     Player.agility_exp_mult,
+                    companyRep:     Player.company_rep_mult,
+                    crimeMoney:     Player.crime_money_mult,
+                    crimeSuccess:   Player.crime_success_mult,
+                    defense:        Player.defense_mult,
+                    defenseExp:     Player.defense_exp_mult,
+                    dexterity:      Player.dexterity_mult,
+                    dexterityExp:   Player.dexterity_exp_mult,
+                    factionRep:     Player.faction_rep_mult,
+                    hacking:        Player.hacking_mult,
+                    hackingExp:     Player.hacking_exp_mult,
+                    strength:       Player.strength_mult,
+                    strengthExp:    Player.strength_exp_mult,
+                    workMoney:      Player.work_money_mult,
+                },
                 timeWorked:         Player.timeWorked,
+                tor:                SpecialServerIps.hasOwnProperty("Darkweb Server"),
                 workHackExpGain:    Player.workHackExpGained,
                 workStrExpGain:     Player.workStrExpGained,
                 workDefExpGain:     Player.workDefExpGained,
@@ -2601,30 +2744,20 @@ function NetscriptFunctions(workerScript) {
                 workMoneyGain:      Player.workMoneyGained,
             };
         },
-        isBusy : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost / 4;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("isBusy", ramCost);
-            }
-            updateDynamicRam("isBusy", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        isBusy: function() {
+            updateDynamicRam("isBusy", getRamCost("isBusy"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run isBusy(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return;
                 }
             }
-            return Player.isWorking;
+            return Player.isWorking || inMission;
         },
-        stopAction : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn1RamCost / 2;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("stopAction", ramCost);
-            }
-            updateDynamicRam("stopAction", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 1)) {
+        stopAction: function() {
+            updateDynamicRam("stopAction", getRamCost("stopAction"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 0) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run stopAction(). It is a Singularity Function and requires SourceFile-4 (level 1) to run.");
                     return false;
                 }
@@ -2638,30 +2771,29 @@ function NetscriptFunctions(workerScript) {
             }
             return false;
         },
-        upgradeHomeRam : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("upgradeHomeRam", ramCost);
-            }
-            updateDynamicRam("upgradeHomeRam", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        upgradeHomeRam: function() {
+            updateDynamicRam("upgradeHomeRam", getRamCost("upgradeHomeRam"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run upgradeHomeRam(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
             }
 
-            const cost = Player.getUpgradeHomeRamCost();
+            // Check if we're at max RAM
+            const homeComputer = Player.getHomeComputer();
+            if (homeComputer.maxRam >= CONSTANTS.HomeComputerMaxRam) {
+                workerScript.log(`ERROR: upgradeHomeRam() failed because your home computer is at max RAM`);
+                return false;
+            }
 
+            const cost = Player.getUpgradeHomeRamCost();
             if (Player.money.lt(cost)) {
                 workerScript.scriptRef.log("ERROR: upgradeHomeRam() failed because you don't have enough money");
                 return false;
             }
 
-            var homeComputer = Player.getHomeComputer();
             homeComputer.maxRam *= 2;
-
             Player.loseMoney(cost);
 
             Player.gainIntelligenceExp(CONSTANTS.IntelligenceSingFnBaseExpGain);
@@ -2670,15 +2802,10 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        getUpgradeHomeRamCost : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost / 2;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getUpgradeHomeRamCost", ramCost);
-            }
-            updateDynamicRam("getUpgradeHomeRamCost", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        getUpgradeHomeRamCost: function() {
+            updateDynamicRam("getUpgradeHomeRamCost", getRamCost("getUpgradeHomeRamCost"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getUpgradeHomeRamCost(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
@@ -2686,26 +2813,42 @@ function NetscriptFunctions(workerScript) {
 
             return Player.getUpgradeHomeRamCost();
         },
-        workForCompany : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("workForCompany", ramCost);
-            }
-            updateDynamicRam("workForCompany", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        workForCompany: function(companyName) {
+            updateDynamicRam("workForCompany", getRamCost("workForCompany"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run workForCompany(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
             }
 
-            if (inMission) {
-                workerScript.scriptRef.log("ERROR: workForCompany() failed because you are in the middle of a mission.");
-                return;
+            // Sanitize input
+            if (companyName == null) {
+                companyName = Player.companyName;
             }
 
-            if (Player.companyPosition == "" || !(Player.companyPosition instanceof CompanyPosition)) {
+            // Make sure its a valid company
+            if (companyName == null || companyName === "" || !(Companies[companyName] instanceof Company)) {
+                workerScript.scriptRef.log(`ERROR: workForCompany() failed because of an invalid company specified: ${companyName}`);
+                return false;
+            }
+
+            // Make sure player is actually employed at the comapny
+            if (!Object.keys(Player.jobs).includes(companyName)) {
+                workerScript.scriptRef.log(`ERROR: workForCompany() failed because you do not have a job at ${companyName}`);
+                return false;
+            }
+
+            // Cant work while in a mission
+            if (inMission) {
+                workerScript.scriptRef.log("ERROR: workForCompany() failed because you are in the middle of a mission.");
+                return false;
+            }
+
+            // Check to make sure company position data is valid
+            const companyPositionName = Player.jobs[companyName];
+            const companyPosition = CompanyPositions[companyPositionName];
+            if (companyPositionName === "" || !(companyPosition instanceof CompanyPosition)) {
                 workerScript.scriptRef.log("ERROR: workForCompany() failed because you do not have a job");
                 return false;
             }
@@ -2717,25 +2860,20 @@ function NetscriptFunctions(workerScript) {
                 }
             }
 
-            if (Player.companyPosition.isPartTimeJob()) {
-                Player.startWorkPartTime();
+            if (companyPosition.isPartTimeJob()) {
+                Player.startWorkPartTime(companyName);
             } else {
-                Player.startWork();
+                Player.startWork(companyName);
             }
             if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.workForCompany == null) {
-                workerScript.scriptRef.log("Began working at " + Player.companyName + " as a " + Player.companyPosition.positionName);
+                workerScript.log(`Began working at ${Player.companyName} as a ${companyPositionName}`);
             }
             return true;
         },
-        applyToCompany : function(companyName, field) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("applyToCompany", ramCost);
-            }
-            updateDynamicRam("applyToCompany", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        applyToCompany: function(companyName, field) {
+            updateDynamicRam("applyToCompany", getRamCost("applyToCompany"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run applyToCompany(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
@@ -2792,31 +2930,26 @@ function NetscriptFunctions(workerScript) {
                     workerScript.scriptRef.log("ERROR: Invalid job passed into applyToCompany: " + field + ". applyToCompany() failed");
                     return false;
             }
-            //The Player object's applyForJob function can return string with special error messages
+            // The Player object's applyForJob function can return string with special error messages
             if (isString(res)) {
                 workerScript.scriptRef.log(res);
                 return false;
             }
             if (res) {
                 if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.applyToCompany == null) {
-                    workerScript.scriptRef.log("You were offered a new job at " + companyName + " as a " + Player.companyPosition.positionName);
+                    workerScript.log(`You were offered a new job at ${companyName} as a ${Player.jobs[companyName]}`);
                 }
             } else {
                 if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.applyToCompany == null) {
-                    workerScript.scriptRef.log("You failed to get a new job/promotion at " + companyName + " in the " + field + " field.");
+                    workerScript.log(`You failed to get a new job/promotion at ${companyName} in the ${field} field.`);
                 }
             }
             return res;
         },
-        getCompanyRep : function(companyName) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost / 2;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getCompanyRep", ramCost);
-            }
-            updateDynamicRam("getCompanyRep", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        getCompanyRep: function(companyName) {
+            updateDynamicRam("getCompanyRep", getRamCost("getCompanyRep"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getCompanyRep(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
@@ -2829,15 +2962,10 @@ function NetscriptFunctions(workerScript) {
             }
             return company.playerReputation;
         },
-        getCompanyFavor : function(companyName) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost / 4;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getCompanyFavor", ramCost);
-            }
-            updateDynamicRam("getCompanyFavor", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        getCompanyFavor: function(companyName) {
+            updateDynamicRam("getCompanyFavor", getRamCost("getCompanyFavor"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getCompanyFavor(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
@@ -2850,15 +2978,10 @@ function NetscriptFunctions(workerScript) {
             }
             return company.favor;
         },
-        getCompanyFavorGain : function(companyName) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost / 4;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getCompanyFavorGain", ramCost);
-            }
-            updateDynamicRam("getCompanyFavorGain", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        getCompanyFavorGain: function(companyName) {
+            updateDynamicRam("getCompanyFavorGain", getRamCost("getCompanyFavorGain"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getCompanyFavorGain(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return -1;
                 }
@@ -2871,31 +2994,21 @@ function NetscriptFunctions(workerScript) {
             }
             return company.getFavorGain()[0];
         },
-        checkFactionInvitations : function() {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("checkFactionInvitations", ramCost);
-            }
-            updateDynamicRam("checkFactionInvitations", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        checkFactionInvitations: function() {
+            updateDynamicRam("checkFactionInvitations", getRamCost("checkFactionInvitations"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run checkFactionInvitations(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
             }
-            //Make a copy of Player.factionInvitations
+            // Make a copy of Player.factionInvitations
             return Player.factionInvitations.slice();
         },
-        joinFaction : function(name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("joinFaction", ramCost);
-            }
-            updateDynamicRam("joinFaction", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        joinFaction: function(name) {
+            updateDynamicRam("joinFaction", getRamCost("joinFaction"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run joinFaction(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
@@ -2913,7 +3026,7 @@ function NetscriptFunctions(workerScript) {
             var fac = Factions[name];
             joinFaction(fac);
 
-            //Update Faction Invitation list to account for joined + banned factions
+            // Update Faction Invitation list to account for joined + banned factions
             for (var i = 0; i < Player.factionInvitations.length; ++i) {
                 if (Player.factionInvitations[i] == name || Factions[Player.factionInvitations[i]].isBanned) {
                     Player.factionInvitations.splice(i, 1);
@@ -2926,15 +3039,10 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        workForFaction : function(name, type) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("workForFaction", ramCost);
-            }
-            updateDynamicRam("workForFaction", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        workForFaction: function(name, type) {
+            updateDynamicRam("workForFaction", getRamCost("workForFaction"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run workForFaction(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return false;
                 }
@@ -2963,13 +3071,13 @@ function NetscriptFunctions(workerScript) {
 
             if (Player.isWorking) {
                 var txt = Player.singularityStopWork();
-                if (workerScript.disableLogs.ALL == null && workerScript.disableLogs.workForFaction == null) {
-                    workerScript.scriptRef.log(txt);
+                if (workerScript.shouldLog("workForFaction")) {
+                    workerScript.log(txt);
                 }
             }
 
             var fac = Factions[name];
-            //Arrays listing factions that allow each time of work
+            // Arrays listing factions that allow each time of work
             var hackAvailable = ["Illuminati", "Daedalus", "The Covenant", "ECorp", "MegaCorp",
                                  "Bachman & Associates", "Blade Industries", "NWO", "Clarke Incorporated",
                                  "OmniTek Incorporated", "Four Sigma", "KuaiGong International",
@@ -2995,46 +3103,47 @@ function NetscriptFunctions(workerScript) {
                 case "hacking contracts":
                 case "hackingcontracts":
                     if (!hackAvailable.includes(fac.name)) {
-                        workerScript.scriptRef.log("ERROR: Cannot carry out hacking contracts for " + fac.name + ". workForFaction() failed");
+                        workerScript.log("ERROR: Cannot carry out hacking contracts for " + fac.name + ". workForFaction() failed");
                         return false;
                     }
                     Player.startFactionHackWork(fac);
-                    workerScript.scriptRef.log("Started carrying out hacking contracts for " + fac.name);
+                    if (workerScript.shouldLog("workForFaction")) {
+                        workerScript.log("Started carrying out hacking contracts for " + fac.name);
+                    }
                     return true;
                 case "field":
                 case "fieldwork":
                 case "field work":
                     if (!fdWkAvailable.includes(fac.name)) {
-                        workerScript.scriptRef.log("ERROR: Cannot carry out field missions for " + fac.name + ". workForFaction() failed");
+                        workerScript.log("ERROR: Cannot carry out field missions for " + fac.name + ". workForFaction() failed");
                         return false;
                     }
                     Player.startFactionFieldWork(fac);
-                    workerScript.scriptRef.log("Started carrying out field missions for " + fac.name);
+                    if (workerScript.shouldLog("workForFaction")) {
+                        workerScript.log("Started carrying out field missions for " + fac.name);
+                    }
                     return true;
                 case "security":
                 case "securitywork":
                 case "security work":
                     if (!scWkAvailable.includes(fac.name)) {
-                        workerScript.scriptRef.log("ERROR: Cannot serve as security detail for " + fac.name + ". workForFaction() failed");
+                        workerScript.log("ERROR: Cannot serve as security detail for " + fac.name + ". workForFaction() failed");
                         return false;
                     }
                     Player.startFactionSecurityWork(fac);
-                    workerScript.scriptRef.log("Started serving as security details for " + fac.name);
+                    if (workerScript.shouldLog("workForFaction")) {
+                        workerScript.log("Started serving as security details for " + fac.name);
+                    }
                     return true;
                 default:
-                    workerScript.scriptRef.log("ERROR: Invalid work type passed into workForFaction(): " + type);
+                    workerScript.log("ERROR: Invalid work type passed into workForFaction(): " + type);
             }
             return true;
         },
-        getFactionRep : function(name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost / 4;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getFactionRep", ramCost);
-            }
-            updateDynamicRam("getFactionRep", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        getFactionRep: function(name) {
+            updateDynamicRam("getFactionRep", getRamCost("getFactionRep"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getFactionRep(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return -1;
                 }
@@ -3047,15 +3156,10 @@ function NetscriptFunctions(workerScript) {
 
             return Factions[name].playerReputation;
         },
-        getFactionFavor : function(name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getFactionFavor", ramCost);
-            }
-            updateDynamicRam("getFactionFavor", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+        getFactionFavor: function(name) {
+            updateDynamicRam("getFactionFavor", getRamCost("getFactionFavor"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getFactionFavor(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return -1;
                 }
@@ -3069,14 +3173,9 @@ function NetscriptFunctions(workerScript) {
             return Factions[name].favor;
         },
         getFactionFavorGain: function(name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn2RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getFactionFavorGain", ramCost);
-            }
-            updateDynamicRam("getFactionFavorGain", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 2)) {
+            updateDynamicRam("getFactionFavorGain", getRamCost("getFactionFavorGain"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 1) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getFactionFavorGain(). It is a Singularity Function and requires SourceFile-4 (level 2) to run.");
                     return -1;
                 }
@@ -3089,15 +3188,10 @@ function NetscriptFunctions(workerScript) {
 
             return Factions[name].getFavorGain()[0];
         },
-        donateToFaction : function(name, amt) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("donateToFaction", ramCost);
-            }
-            updateDynamicRam("donateToFaction", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        donateToFaction: function(name, amt) {
+            updateDynamicRam("donateToFaction", getRamCost("donateToFaction"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run donateToFaction(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return;
                 }
@@ -3128,15 +3222,10 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        createProgram : function(name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("createProgram", ramCost);
-            }
-            updateDynamicRam("createProgram", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        createProgram: function(name) {
+            updateDynamicRam("createProgram", getRamCost("createProgram"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run createProgram(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return false;
                 }
@@ -3171,7 +3260,7 @@ function NetscriptFunctions(workerScript) {
                 return false;
             }
 
-            if (!p.create.req()) {
+            if (!p.create.req(Player)) {
                 workerScript.scriptRef.log("ERROR: createProgram() failed because hacking level is too low to create " + p.name + " (level " + p.create.level + " req)");
                 return false
             }
@@ -3182,15 +3271,10 @@ function NetscriptFunctions(workerScript) {
             }
             return true;
         },
-        commitCrime : function(crimeRoughName) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("commitCrime", ramCost);
-            }
-            updateDynamicRam("commitCrime", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        commitCrime: function(crimeRoughName) {
+            updateDynamicRam("commitCrime", getRamCost("commitCrime"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run commitCrime(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return;
                 }
@@ -3206,29 +3290,8 @@ function NetscriptFunctions(workerScript) {
                 }
             }
 
-            //Set Location to slums
-            switch(Player.city) {
-                case Locations.Aevum:
-                    Player.location = Locations.AevumSlums;
-                    break;
-                case Locations.Chongqing:
-                    Player.location = Locations.ChongqingSlums;
-                    break;
-                case Locations.Sector12:
-                    Player.location = Locations.Sector12Slums;
-                    break;
-                case Locations.NewTokyo:
-                    Player.location = Locations.NewTokyoSlums;
-                    break;
-                case Locations.Ishima:
-                    Player.location = Locations.IshimaSlums;
-                    break;
-                case Locations.Volhaven:
-                    Player.location = Locations.VolhavenSlums;
-                    break;
-                default:
-                    console.log("Invalid Player.city value");
-            }
+            // Set Location to slums
+            Player.gotoLocation(LocationName.Slums);
 
             const crime = findCrime(crimeRoughName.toLowerCase());
             if(crime == null) { // couldn't find crime
@@ -3237,17 +3300,12 @@ function NetscriptFunctions(workerScript) {
             if(workerScript.disableLogs.ALL == null && workerScript.disableLogs.commitCrime == null) {
                 workerScript.scriptRef.log("Attempting to commit crime: "+crime.name+"...");
             }
-            return crime.commit(CONSTANTS.CrimeSingFnDivider, {workerscript: workerScript});
+            return crime.commit(Player, 1, {workerscript: workerScript});
         },
-        getCrimeChance : function(crimeRoughName) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getCrimeChance", ramCost);
-            }
-            updateDynamicRam("getCrimeChance", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        getCrimeChance: function(crimeRoughName) {
+            updateDynamicRam("getCrimeChance", getRamCost("getCrimeChance"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getCrimeChance(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return;
                 }
@@ -3258,17 +3316,12 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "Invalid crime passed into getCrimeChance(): " + crime);
             }
 
-            return crime.successRate();
+            return crime.successRate(Player);
         },
-        getOwnedAugmentations : function(purchased=false) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getOwnedAugmentations", ramCost);
-            }
-            updateDynamicRam("getOwnedAugmentations", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        getOwnedAugmentations: function(purchased=false) {
+            updateDynamicRam("getOwnedAugmentations", getRamCost("getOwnedAugmentations"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getOwnedAugmentations(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return [];
                 }
@@ -3284,15 +3337,10 @@ function NetscriptFunctions(workerScript) {
             }
             return res;
         },
-        getOwnedSourceFiles : function() {
-            let ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getOwnedSourceFiles", ramCost);
-            }
-            updateDynamicRam("getOwnedSourceFiles", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        getOwnedSourceFiles: function() {
+            updateDynamicRam("getOwnedSourceFiles", getRamCost("getOwnedSourceFiles"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getOwnedSourceFiles(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return [];
                 }
@@ -3303,41 +3351,57 @@ function NetscriptFunctions(workerScript) {
             }
             return res;
         },
-        getAugmentationsFromFaction : function(facname) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getAugmentationsFromFaction", ramCost);
-            }
-            updateDynamicRam("getAugmentationsFromFaction", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        getAugmentationsFromFaction: function(facname) {
+            updateDynamicRam("getAugmentationsFromFaction", getRamCost("getAugmentationsFromFaction"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getAugmentationsFromFaction(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return [];
                 }
             }
 
-            if (!factionExists(facname)) {
+            const fac = Factions[facname];
+            if (!(fac instanceof Faction)) {
                 workerScript.scriptRef.log("ERROR: getAugmentationsFromFaction() failed. Invalid faction name passed in (this is case-sensitive): " + facname);
                 return [];
             }
 
-            var fac = Factions[facname];
-            var res = [];
-            for (var i = 0; i < fac.augmentations.length; ++i) {
-                res.push(fac.augmentations[i]);
+            // If player has a gang with this faction, return all factions
+            if (Player.hasGangWith(facname)) {
+                const res = [];
+                for (const augName in Augmentations) {
+                    const aug = Augmentations[augName];
+                    if (!aug.isSpecial) {
+                        res.push(augName);
+                    }
+                }
+
+                return res;
             }
-            return res;
+
+            return fac.augmentations.slice();
         },
-        getAugmentationCost : function(name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("getAugmentationCost", ramCost);
+        getAugmentationPrereq: function(name) {
+            updateDynamicRam("getAugmentationPrereq", getRamCost("getAugmentationPrereq"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
+                    throw makeRuntimeRejectMsg(workerScript, "Cannot run getAugmentationPrereq(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
+                    return false;
+                }
             }
-            updateDynamicRam("getAugmentationCost", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+
+            if (!augmentationExists(name)) {
+                workerScript.scriptRef.log("ERROR: getAugmentationPrereq() failed. Invalid Augmentation name passed in (note: this is case-sensitive): " + name);
+                return [];
+            }
+
+            var aug = Augmentations[name];
+            return aug.prereqs.slice();
+        },
+        getAugmentationCost: function(name) {
+            updateDynamicRam("getAugmentationCost", getRamCost("getAugmentationCost"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run getAugmentationCost(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return false;
                 }
@@ -3351,64 +3415,67 @@ function NetscriptFunctions(workerScript) {
             var aug = Augmentations[name];
             return [aug.baseRepRequirement, aug.baseCost];
         },
-        purchaseAugmentation : function(faction, name) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("purchaseAugmentation", ramCost);
-            }
-            updateDynamicRam("purchaseAugmentation", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        purchaseAugmentation: function(faction, name) {
+            updateDynamicRam("purchaseAugmentation", getRamCost("purchaseAugmentation"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run purchaseAugmentation(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return false;
                 }
             }
 
-            var fac = Factions[faction];
-            if (fac == null || !(fac instanceof Faction)) {
-                workerScript.scriptRef.log("ERROR: purchaseAugmentation() failed because of invalid faction name: " + faction);
+            const fac = Factions[faction];
+            if (!(fac instanceof Faction)) {
+                workerScript.log("ERROR: purchaseAugmentation() failed because of invalid faction name: " + faction);
                 return false;
             }
 
-            if (!fac.augmentations.includes(name)) {
-                workerScript.scriptRef.log("ERROR: purchaseAugmentation() failed because the faction " + faction + " does not contain the " + name + " augmentation");
+            let augs = [];
+            if (Player.hasGangWith(faction)) {
+                for (const augName in Augmentations) {
+                    const tempAug = Augmentations[augName];
+                    if (!tempAug.isSpecial) {
+                        augs.push(augName);
+                    }
+                }
+            } else {
+                augs = fac.augmentations;
+            }
+
+            if (!augs.includes(name)) {
+                workerScript.log("ERROR: purchaseAugmentation() failed because the faction " + faction + " does not contain the " + name + " augmentation");
                 return false;
             }
 
-            var aug = Augmentations[name];
-            if (aug == null || !(aug instanceof Augmentation)) {
-                workerScript.scriptRef.log("ERROR: purchaseAugmentation() failed because of invalid augmentation name: " + name);
+            const aug = Augmentations[name];
+            if (!(aug instanceof Augmentation)) {
+                workerScript.log("ERROR: purchaseAugmentation() failed because of invalid augmentation name: " + name);
                 return false;
             }
 
-            var isNeuroflux = false;
-            if (aug.name === AugmentationNames.NeuroFluxGovernor) {
-                isNeuroflux = true;
-            }
-
+            let isNeuroflux = (aug.name === AugmentationNames.NeuroFluxGovernor);
             if (!isNeuroflux) {
-                for (var j = 0; j < Player.queuedAugmentations.length; ++j) {
+                for (let j = 0; j < Player.queuedAugmentations.length; ++j) {
                     if (Player.queuedAugmentations[j].name === aug.name) {
-                        workerScript.scriptRef.log("ERROR: purchaseAugmentation() failed because you already have " + name);
+                        workerScript.log("ERROR: purchaseAugmentation() failed because you already have " + name);
                         return false;
                     }
                 }
-                for (var j = 0; j < Player.augmentations.length; ++j) {
+                for (let j = 0; j < Player.augmentations.length; ++j) {
                     if (Player.augmentations[j].name === aug.name) {
-                        workerScript.scriptRef.log("ERROR: purchaseAugmentation() failed because you already have " + name);
+                        workerScript.log("ERROR: purchaseAugmentation() failed because you already have " + name);
                         return false;
                     }
                 }
             }
 
             if (fac.playerReputation < aug.baseRepRequirement) {
-                workerScript.scriptRef.log("ERROR: purchaseAugmentation() failed because you do not have enough reputation with " + fac.name);
+                workerScript.log("ERROR: purchaseAugmentation() failed because you do not have enough reputation with " + fac.name);
                 return false;
             }
 
             var res = purchaseAugmentation(aug, fac, true);
-            workerScript.scriptRef.log(res);
+            workerScript.log(res);
             if (isString(res) && res.startsWith("You purchased")) {
                 Player.gainIntelligenceExp(CONSTANTS.IntelligenceSingFnBaseExpGain);
                 return true;
@@ -3416,15 +3483,10 @@ function NetscriptFunctions(workerScript) {
                 return false;
             }
         },
-        installAugmentations : function(cbScript) {
-            var ramCost = CONSTANTS.ScriptSingularityFn3RamCost;
-            if (Player.bitNodeN !== 4) {ramCost *= 8;}
-            if (workerScript.checkingRam) {
-                return updateStaticRam("installAugmentations", ramCost);
-            }
-            updateDynamicRam("installAugmentations", ramCost);
-            if (Player.bitNodeN != 4) {
-                if (!(hasSingularitySF && singularitySFLvl >= 3)) {
+        installAugmentations: function(cbScript) {
+            updateDynamicRam("installAugmentations", getRamCost("installAugmentations"));
+            if (Player.bitNodeN !== 4) {
+                if (SourceFileFlags[4] <= 2) {
                     throw makeRuntimeRejectMsg(workerScript, "Cannot run installAugmentations(). It is a Singularity Function and requires SourceFile-4 (level 3) to run.");
                     return false;
                 }
@@ -3435,74 +3497,358 @@ function NetscriptFunctions(workerScript) {
                 return false;
             }
             Player.gainIntelligenceExp(CONSTANTS.IntelligenceSingFnBaseExpGain);
-            workerScript.scriptRef.log("Installing Augmentations. This will cause this script to be killed");
-            installAugmentations(cbScript);
-            return true;
+            workerScript.log("Installing Augmentations. This will cause this script to be killed");
+            setTimeoutRef(() => {
+                installAugmentations(cbScript);
+            }, 0);
+
+            workerScript.running = false; // Prevent workerScript from "finishing execution naturally"
+            killWorkerScript(workerScript);
         },
 
-        //Bladeburner API
-        bladeburner : {
-            getContractNames : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getContractNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
+        // Gang API
+        gang: {
+            getMemberNames: function() {
+                updateDynamicRam("getMemberNames", getRamCost("gang", "getMemberNames"));
+                nsGang.checkGangApiAccess(workerScript, "getMemberNames");
+
+                try {
+                    const names = [];
+                    for (const member of Player.gang.members) {
+                        names.push(member.name);
+                    }
+                    return names;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getMemberNames", e));
                 }
-                updateDynamicRam("getContractNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            },
+            getGangInformation: function() {
+                updateDynamicRam("getGangInformation", getRamCost("gang", "getGangInformation"));
+                nsGang.checkGangApiAccess(workerScript, "getGangInformation");
+
+                try {
+                    return {
+                        faction:                    Player.gang.facName,
+                        isHacking:                  Player.gang.isHackingGang,
+                        moneyGainRate:              Player.gang.moneyGainRate,
+                        power:                      Player.gang.getPower(),
+                        respect:                    Player.gang.respect,
+                        respectGainRate:            Player.gang.respectGainRate,
+                        territory:                  Player.gang.getTerritory(),
+                        territoryClashChance:       Player.gang.territoryClashChance,
+                        territoryWarfareEngaged:    Player.gang.territoryWarfareEngaged,
+                        wantedLevel:                Player.gang.wanted,
+                        wantedLevelGainRate:        Player.gang.wantedGainRate,
+                    }
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getGangInformation", e));
+                }
+            },
+            getOtherGangInformation: function() {
+                updateDynamicRam("getOtherGangInformation", getRamCost("gang", "getOtherGangInformation"));
+                nsGang.checkGangApiAccess(workerScript, "getOtherGangInformation");
+
+                try {
+                    // We have to make a deep copy
+                    const cpy = {};
+                    for (const gang in AllGangs) {
+                        cpy[gang] = Object.assign({}, AllGangs[gang]);
+                    }
+
+                    return cpy;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getOtherGangInformation", e));
+                }
+            },
+            getMemberInformation: function(name) {
+                updateDynamicRam("getMemberInformation", getRamCost("gang", "getMemberInformation"));
+                nsGang.checkGangApiAccess(workerScript, "getMemberInformation");
+
+                try {
+                    for (const member of Player.gang.members) {
+                        if (member.name === name) {
+                            return {
+                                agility:                member.agi,
+                                agilityEquipMult:       member.agi_mult,
+                                agilityAscensionMult:   member.agi_asc_mult,
+                                augmentations:          member.augmentations.slice(),
+                                charisma:               member.cha,
+                                charismaEquipMult:      member.cha_mult,
+                                charismaAscensionMult:  member.cha_asc_mult,
+                                defense:                member.def,
+                                defenseEquipMult:       member.def_mult,
+                                defenseAscensionMult:   member.def_asc_mult,
+                                dexterity:              member.dex,
+                                dexterityEquipMult:     member.dex_mult,
+                                dexterityAscensionMult: member.dex_asc_mult,
+                                equipment:              member.upgrades.slice(),
+                                hacking:                member.hack,
+                                hackingEquipMult:       member.hack_mult,
+                                hackingAscensionMult:   member.hack_asc_mult,
+                                strength:               member.str,
+                                strengthEquipMult:      member.str_mult,
+                                strengthAscensionMult:  member.str_asc_mult,
+                                task:                   member.task,
+                            }
+                        }
+                    }
+
+                    workerScript.log(`Invalid argument passed to gang.getMemberInformation(). No gang member could be found with name ${name}`);
+                    return {}; // Member could not be found
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getMemberInformation", e));
+                }
+            },
+            canRecruitMember: function() {
+                updateDynamicRam("canRecruitMember", getRamCost("gang", "canRecruitMember"));
+                nsGang.checkGangApiAccess(workerScript, "canRecruitMember");
+
+                try {
+                    return Player.gang.canRecruitMember();
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("canRecruitMember", e));
+                }
+            },
+            recruitMember: function(name) {
+                updateDynamicRam("recruitMember", getRamCost("gang", "recruitMember"));
+                nsGang.checkGangApiAccess(workerScript, "recruitMember");
+
+                try {
+                    const res = Player.gang.recruitMember(name);
+                    if (workerScript.shouldLog("recruitMember")) {
+                        if (res) {
+                            workerScript.log(`Successfully recruited Gang Member ${name}`);
+                        } else {
+                            workerScript.log(`Failed to recruit Gang Member ${name}`);
+                        }
+                    }
+
+                    return res;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("recruitMember", e));
+                }
+            },
+            getTaskNames: function() {
+                updateDynamicRam("getTaskNames", getRamCost("gang", "getTaskNames"));
+                nsGang.checkGangApiAccess(workerScript, "getTaskNames");
+
+                try {
+                    const tasks = Player.gang.getAllTaskNames();
+                    tasks.unshift("Unassigned");
+                    return tasks;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getTaskNames", e));
+                }
+            },
+            setMemberTask: function(memberName, taskName) {
+                updateDynamicRam("setMemberTask", getRamCost("gang", "setMemberTask"));
+                nsGang.checkGangApiAccess(workerScript, "setMemberTask");
+
+                try {
+                    for (const member of Player.gang.members) {
+                        if (member.name === memberName) {
+                            const res = member.assignToTask(taskName);
+                            if (workerScript.shouldLog("setMemberTask")) {
+                                if (res) {
+                                    workerScript.log(`Successfully assigned Gang Member ${memberName} to ${taskName} task`);
+                                } else {
+                                    workerScript.log(`Failed to assign Gang Member ${memberName} to ${taskName} task. ${memberName} is now Unassigned`);
+                                }
+                            }
+
+                            return res;
+                        }
+                    }
+
+                    workerScript.log(`Invalid argument passed to gang.setMemberTask(). No gang member could be found with name ${memberName}`);
+                    return false;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("setMemberTask", e));
+                }
+            },
+            getEquipmentNames: function() {
+                updateDynamicRam("getEquipmentNames", getRamCost("gang", "getEquipmentNames"));
+                nsGang.checkGangApiAccess(workerScript, "getEquipmentNames");
+
+                try {
+                    return Player.gang.getAllUpgradeNames();
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getEquipmentNames", e));
+                }
+            },
+            getEquipmentCost: function(equipName) {
+                updateDynamicRam("getEquipmentCost", getRamCost("gang", "getEquipmentCost"));
+                nsGang.checkGangApiAccess(workerScript, "getEquipmentCost");
+
+                try {
+                    return Player.gang.getUpgradeCost(equipName);
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getEquipmentCost", e));
+                }
+            },
+            getEquipmentType: function(equipName) {
+                updateDynamicRam("getEquipmentType", getRamCost("gang", "getEquipmentType"));
+                nsGang.checkGangApiAccess(workerScript, "getEquipmentType");
+
+                try {
+                    return Player.gang.getUpgradeType(equipName);
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getEquipmentType", e));
+                }
+            },
+            purchaseEquipment: function(memberName, equipName) {
+                updateDynamicRam("purchaseEquipment", getRamCost("gang", "purchaseEquipment"));
+                nsGang.checkGangApiAccess(workerScript, "purchaseEquipment");
+
+                try {
+                    for (const member of Player.gang.members) {
+                        if (member.name === memberName) {
+                            const res = member.buyUpgrade(equipName, Player, Player.gang);
+                            if (workerScript.shouldLog("purchaseEquipment")) {
+                                if (res) {
+                                    workerScript.log(`Purchased ${equipName} for Gang member ${memberName}`);
+                                } else {
+                                    workerScript.log(`Failed to purchase ${equipName} for Gang member ${memberName}`);
+                                }
+                            }
+
+                            return res;
+                        }
+                    }
+
+                    workerScript.log(`Invalid argument passed to gang.purchaseEquipment(). No gang member could be found with name ${memberName}`);
+                    return false;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("purchaseEquipment", e));
+                }
+            },
+            ascendMember: function(name) {
+                updateDynamicRam("ascendMember", getRamCost("gang", "ascendMember"));
+                nsGang.checkGangApiAccess(workerScript, "ascendMember");
+
+                try {
+                    for (const member of Player.gang.members) {
+                        if (member.name === name) {
+                            return Player.gang.ascendMember(member, workerScript);
+                        }
+                    }
+
+                    workerScript.log(`Invalid argument passed to gang.ascendMember(). No gang member could be found with name ${name}`);
+                    return false;
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("ascendMember", e));
+                }
+            },
+            setTerritoryWarfare: function(engage) {
+                updateDynamicRam("setTerritoryWarfare", getRamCost("gang", "setTerritoryWarfare"));
+                nsGang.checkGangApiAccess(workerScript, "setTerritoryWarfare");
+
+                try {
+                    if (engage) {
+                        Player.gang.territoryWarfareEngaged = true;
+                        if (workerScript.shouldLog("setTerritoryWarfare")) {
+                            workerScript.log("Engaging in Gang Territory Warfare");
+                        }
+                    } else {
+                        Player.gang.territoryWarfareEngaged = false;
+                        if (workerScript.shouldLog("setTerritoryWarfare")) {
+                            workerScript.log("Disengaging in Gang Territory Warfare");
+                        }
+                    }
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("setTerritoryWarfare", e));
+                }
+            },
+            getChanceToWinClash: function(otherGang) {
+                updateDynamicRam("getChanceToWinClash", getRamCost("gang", "getChanceToWinClash"));
+                nsGang.checkGangApiAccess(workerScript, "getChanceToWinClash");
+
+                try {
+                    if (AllGangs[otherGang] == null) {
+                        workerScript.log(`Invalid gang specified in gang.getChanceToWinClash() : ${otherGang}`);
+                        return 0;
+                    }
+
+                    const playerPower = AllGangs[Player.gang.facName].power;
+                    const otherPower = AllGangs[otherGang].power;
+
+                    return playerPower / (otherPower + playerPower);
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getChanceToWinClash", e));
+                }
+            },
+            getBonusTime: function() {
+                nsGang.checkGangApiAccess(workerScript, "getBonusTime");
+
+                try {
+                    return Math.round(Player.gang.storedCycles / 5);
+                } catch(e) {
+                    throw makeRuntimeRejectMsg(workerScript, nsGang.unknownGangApiExceptionMessage("getBonusTime", e));
+                }
+            },
+        }, // end gang namespace
+
+        // Bladeburner API
+        bladeburner: {
+            getContractNames: function() {
+                updateDynamicRam("getContractNames", getRamCost("bladeburner", "getContractNames"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.getContractNamesNetscriptFn();
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getContractNames() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getOperationNames : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getOperationNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                }
-                updateDynamicRam("getOperationNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getOperationNames: function() {
+                updateDynamicRam("getOperationNames", getRamCost("bladeburner", "getOperationNames"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.getOperationNamesNetscriptFn();
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getOperationNames() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getBlackOpNames : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getBlackOpNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                }
-                updateDynamicRam("getBlackOpNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getBlackOpNames: function() {
+                updateDynamicRam("getBlackOpNames", getRamCost("bladeburner", "getBlackOpNames"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.getBlackOpNamesNetscriptFn();
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getBlackOpNames() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getGeneralActionNames : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getGeneralActionNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
+            getBlackOpRank: function(name="") {
+                updateDynamicRam("getBlackOpRank", getRamCost("bladeburner", "getBlackOpRank"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
+                    const actionId = Player.bladeburner.getActionIdFromTypeAndName('blackops', name)
+                    if (!actionId) {
+                        return -1;
+                    }
+                    const actionObj = Player.bladeburner.getActionObject(actionId);
+                    if (!actionObj) {
+                        return -1;
+                    }
+                    return actionObj.reqdRank;
                 }
-                updateDynamicRam("getGeneralActionNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+                throw makeRuntimeRejectMsg(workerScript, "getBlackOpRank() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
+                                                         "at the Bladeburner division or because you do not have Source-File 7");
+            },
+            getGeneralActionNames: function() {
+                updateDynamicRam("getGeneralActionNames", getRamCost("bladeburner", "getGeneralActionNames"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.getGeneralActionNamesNetscriptFn();
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getGeneralActionNames() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getSkillNames : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getSkillNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                }
-                updateDynamicRam("getSkillNames", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 10);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getSkillNames: function() {
+                updateDynamicRam("getSkillNames", getRamCost("bladeburner", "getSkillNames"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.getSkillNamesNetscriptFn();
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getSkillNames() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            startAction : function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("startAction", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("startAction", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            startAction: function(type="", name="") {
+                updateDynamicRam("startAction", getRamCost("bladeburner", "startAction"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.startActionNetscriptFn(type, name, workerScript);
                     } catch(e) {
@@ -3512,34 +3858,25 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "startAction() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            stopBladeburnerAction : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("stopBladeburnerAction", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 2);
-                }
-                updateDynamicRam("stopBladeburnerAction", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 2);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            stopBladeburnerAction: function() {
+                updateDynamicRam("stopBladeburnerAction", getRamCost("bladeburner", "stopBladeburnerAction"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.resetAction();
                 }
                 throw makeRuntimeRejectMsg(workerScript, "stopBladeburnerAction() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getCurrentAction : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getCurrentAction", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 4);
-                }
-                updateDynamicRam("getCurrentAction", CONSTANTS.ScriptBladeburnerApiBaseRamCost / 4);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getCurrentAction: function() {
+                updateDynamicRam("getCurrentAction", getRamCost("bladeburner", "getCurrentAction"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.getTypeAndNameFromActionId(Player.bladeburner.action);
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getCurrentAction() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getActionTime : function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getActionTime", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getActionTime", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getActionTime: function(type="", name="") {
+                updateDynamicRam("getActionTime", getRamCost("bladeburner", "getActionTime"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getActionTimeNetscriptFn(type, name, workerScript);
                     } catch(e) {
@@ -3549,12 +3886,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getActionTime() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getActionEstimatedSuccessChance : function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getActionEstimatedSuccessChance", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getActionEstimatedSuccessChance", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getActionEstimatedSuccessChance: function(type="", name="") {
+                updateDynamicRam("getActionEstimatedSuccessChance", getRamCost("bladeburner", "getActionEstimatedSuccessChance"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getActionEstimatedSuccessChanceNetscriptFn(type, name, workerScript);
                     } catch(e) {
@@ -3564,12 +3898,37 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getActionEstimatedSuccessChance() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getActionCountRemaining : function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getActionCountRemaining", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
+            getActionRepGain: function(type="", name="", level) {
+                updateDynamicRam("getActionRepGain", getRamCost("bladeburner", "getActionRepGain"));
+                checkBladeburnerAccess(workerScript, "getActionRepGain");
+
+                try {
+                    var errorLogText = unknownBladeburnerActionErrorMessage("getActionAutolevel", type, name);
+                    const actionId = Player.bladeburner.getActionIdFromTypeAndName(type, name);
+                    if (actionId == null) {
+                        workerScript.log(errorLogText);
+                        return -1;
+                    }
+                    const actionObj = Player.bladeburner.getActionObject(actionId);
+                    if (actionObj == null) {
+                        workerScript.log(errorLogText);
+                        return -1;
+                    }
+                    var rewardMultiplier;
+                    if (level == null || isNaN(level)) {
+                        rewardMultiplier = Math.pow(actionObj.rewardFac, actionObj.level - 1);
+                    } else {
+                        rewardMultiplier = Math.pow(actionObj.rewardFac, level - 1);
+                    }
+
+                    return actionObj.rankGain * rewardMultiplier * BitNodeMultipliers.BladeburnerRank;
+                } catch(err) {
+                    throw makeRuntimeRejectMsg(workerScript, unknownBladeburnerExceptionMessage("getActionAutolevel", err));
                 }
-                updateDynamicRam("getActionCountRemaining", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            },
+            getActionCountRemaining: function(type="", name="") {
+                updateDynamicRam("getActionCountRemaining", getRamCost("bladeburner", "getActionCountRemaining"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getActionCountRemainingNetscriptFn(type, name, workerScript);
                     } catch(e) {
@@ -3580,10 +3939,7 @@ function NetscriptFunctions(workerScript) {
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
             getActionMaxLevel: function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getActionMaxLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getActionMaxLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
+                updateDynamicRam("getActionMaxLevel", getRamCost("bladeburner", "getActionMaxLevel"));
                 checkBladeburnerAccess(workerScript, "getActionMaxLevel");
 
                 try {
@@ -3604,10 +3960,7 @@ function NetscriptFunctions(workerScript) {
                 }
             },
             getActionCurrentLevel: function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getActionCurrentLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getActionCurrentLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
+                updateDynamicRam("getActionCurrentLevel", getRamCost("bladeburner", "getActionCurrentLevel"));
                 checkBladeburnerAccess(workerScript, "getActionCurrentLevel");
 
                 try {
@@ -3628,10 +3981,7 @@ function NetscriptFunctions(workerScript) {
                 }
             },
             getActionAutolevel: function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getActionAutolevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getActionAutolevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
+                updateDynamicRam("getActionAutolevel", getRamCost("bladeburner", "getActionAutolevel"));
                 checkBladeburnerAccess(workerScript, "getActionAutolevel");
 
                 try {
@@ -3652,10 +4002,7 @@ function NetscriptFunctions(workerScript) {
                 }
             },
             setActionAutolevel: function(type="", name="", autoLevel=true) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("setActionAutolevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("setActionAutolevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
+                updateDynamicRam("setActionAutolevel", getRamCost("bladeburner", "setActionAutolevel"));
                 checkBladeburnerAccess(workerScript, "setActionAutolevel");
 
                 try {
@@ -3676,10 +4023,7 @@ function NetscriptFunctions(workerScript) {
                 }
             },
             setActionLevel: function(type="", name="", level=1) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("setActionLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("setActionLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
+                updateDynamicRam("setActionLevel", getRamCost("bladeburner", "setActionLevel"));
                 checkBladeburnerAccess(workerScript, "setActionLevel");
 
                 try {
@@ -3707,34 +4051,25 @@ function NetscriptFunctions(workerScript) {
                     throw makeRuntimeRejectMsg(workerScript, unknownBladeburnerExceptionMessage("setActionLevel", err));
                 }
             },
-            getRank : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getRank", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getRank", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getRank: function() {
+                updateDynamicRam("getRank", getRamCost("bladeburner", "getRank"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.rank;
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getRank() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getSkillPoints : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getSkillPoints", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getSkillPoints", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getSkillPoints: function() {
+                updateDynamicRam("getSkillPoints", getRamCost("bladeburner", "getSkillPoints"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.skillPoints;
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getSkillPoints() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getSkillLevel : function(skillName="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getSkillLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getSkillLevel", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getSkillLevel: function(skillName="") {
+                updateDynamicRam("getSkillLevel", getRamCost("bladeburner", "getSkillLevel"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getSkillLevelNetscriptFn(skillName, workerScript);
                     } catch(e) {
@@ -3744,12 +4079,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getSkillLevel() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getSkillUpgradeCost : function(skillName="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getSkillUpgradeCost", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getSkillUpgradeCost", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getSkillUpgradeCost: function(skillName="") {
+                updateDynamicRam("getSkillUpgradeCost", getRamCost("bladeburner", "getSkillUpgradeCost"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getSkillUpgradeCostNetscriptFn(skillName, workerScript);
                     } catch(e) {
@@ -3759,12 +4091,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getSkillUpgradeCost() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            upgradeSkill : function(skillName) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("upgradeSkill", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("upgradeSkill", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            upgradeSkill: function(skillName) {
+                updateDynamicRam("upgradeSkill", getRamCost("bladeburner", "upgradeSkill"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.upgradeSkillNetscriptFn(skillName, workerScript);
                     } catch(e) {
@@ -3774,12 +4103,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "upgradeSkill() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getTeamSize : function(type="", name="") {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getTeamSize", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getTeamSize", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getTeamSize: function(type="", name="") {
+                updateDynamicRam("getTeamSize", getRamCost("bladeburner", "getTeamSize"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getTeamSizeNetscriptFn(type, name, workerScript);
                     } catch(e) {
@@ -3789,12 +4115,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getTeamSize() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            setTeamSize : function(type="", name="", size) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("setTeamSize", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("setTeamSize", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            setTeamSize: function(type="", name="", size) {
+                updateDynamicRam("setTeamSize",getRamCost("bladeburner", "setTeamSize"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.setTeamSizeNetscriptFn(type, name, size, workerScript);
                     } catch(e) {
@@ -3804,12 +4127,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "setTeamSize() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getCityEstimatedPopulation : function(cityName) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getCityEstimatedPopulation", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getCityEstimatedPopulation", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getCityEstimatedPopulation: function(cityName) {
+                updateDynamicRam("getCityEstimatedPopulation", getRamCost("bladeburner", "getCityEstimatedPopulation"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getCityEstimatedPopulationNetscriptFn(cityName, workerScript);
                     } catch(e) {
@@ -3819,12 +4139,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getCityEstimatedPopulation() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getCityEstimatedCommunities : function(cityName) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getCityEstimatedCommunities", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getCityEstimatedCommunities", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getCityEstimatedCommunities: function(cityName) {
+                updateDynamicRam("getCityEstimatedCommunities", getRamCost("bladeburner", "getCityEstimatedCommunities"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getCityEstimatedCommunitiesNetscriptFn(cityName, workerScript);
                     } catch(e) {
@@ -3834,12 +4151,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getCityEstimatedCommunities() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getCityChaos : function(cityName) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getCityChaos", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getCityChaos", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getCityChaos: function(cityName) {
+                updateDynamicRam("getCityChaos", getRamCost("bladeburner", "getCityChaos"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.getCityChaosNetscriptFn(cityName, workerScript);
                     } catch(e) {
@@ -3849,12 +4163,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getCityChaos() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getCity : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getCity", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getCity", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getCity: function() {
+                updateDynamicRam("getCity", getRamCost("bladeburner", "getCity"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.city;
                     } catch(e) {
@@ -3864,12 +4175,9 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "getCity() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            switchCity : function(cityName) {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("switchCity", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("switchCity", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            switchCity: function(cityName) {
+                updateDynamicRam("switchCity", getRamCost("bladeburner", "switchCity"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     try {
                         return Player.bladeburner.switchCityNetscriptFn(cityName, workerScript);
                     } catch(e) {
@@ -3879,40 +4187,38 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "switchCity() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getStamina : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("getStamina", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("getStamina", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getStamina: function() {
+                updateDynamicRam("getStamina", getRamCost("bladeburner", "getStamina"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return [Player.bladeburner.stamina, Player.bladeburner.maxStamina];
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getStamina() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            joinBladeburnerFaction : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("joinBladeburnerFaction", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("joinBladeburnerFaction", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            joinBladeburnerFaction: function() {
+                updateDynamicRam("joinBladeburnerFaction", getRamCost("bladeburner", "joinBladeburnerFaction"));
+                if (Player.bladeburner instanceof Bladeburner && (Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Player.bladeburner.joinBladeburnerFactionNetscriptFn(workerScript);
                 }
                 throw makeRuntimeRejectMsg(workerScript, "joinBladeburnerFaction() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            joinBladeburnerDivision : function() {
-                if (workerScript.checkingRam) {
-                    return updateStaticRam("joinBladeburnerDivision", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                }
-                updateDynamicRam("joinBladeburnerDivision", CONSTANTS.ScriptBladeburnerApiBaseRamCost);
-                if ((Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            joinBladeburnerDivision: function() {
+                updateDynamicRam("joinBladeburnerDivision", getRamCost("bladeburner", "joinBladeburnerDivision"));
+                if ((Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
+                    if (Player.bitNodeN === 8) { return false; }
                     if (Player.bladeburner instanceof Bladeburner) {
-                        return true; //Already member
+                        return true; // Already member
                     } else if (Player.strength >= 100 && Player.defense >= 100 &&
                                Player.dexterity >= 100 && Player.agility >= 100) {
                         Player.bladeburner = new Bladeburner({new:true});
                         workerScript.log("You have been accepted into the Bladeburner division");
+
+                        const worldHeader = document.getElementById("world-menu-header");
+                        if (worldHeader instanceof HTMLElement) {
+                            worldHeader.click(); worldHeader.click();
+                        }
+
                         return true;
                     } else {
                         workerScript.log("You do not meet the requirements for joining the Bladeburner division");
@@ -3922,17 +4228,406 @@ function NetscriptFunctions(workerScript) {
                 throw makeRuntimeRejectMsg(workerScript, "joinBladeburnerDivision() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             },
-            getBonusTime : function() {
-                if (workerScript.checkingRam) {return 0;}
-                if ((Player.bitNodeN === 7 || hasBladeburner2079SF)) {
+            getBonusTime: function() {
+                if ((Player.bitNodeN === 7 || SourceFileFlags[7] > 0)) {
                     return Math.round(Player.bladeburner.storedCycles / 5);
                 }
                 throw makeRuntimeRejectMsg(workerScript, "getBonusTime() failed because you do not currently have access to the Bladeburner API. This is either because you are not currently employed " +
                                                          "at the Bladeburner division or because you do not have Source-File 7");
             }
-        }
-    } //End return
-} //End NetscriptFunction()
+        }, // End Bladeburner
 
-export {NetscriptFunctions, initSingularitySFFlags, hasSingularitySF, hasBn11SF,
-        hasWallStreetSF, wallStreetSFLvl, hasCorporationSF, hasAISF, hasBladeburnerSF};
+        // Coding Contract API
+        codingcontract: {
+            attempt: function(answer, fn, ip=workerScript.serverIp, { returnReward } = {}) {
+                updateDynamicRam("attempt", getRamCost("codingcontract", "attempt"));
+                const contract = getCodingContract(fn, ip);
+                if (contract == null) {
+                    workerScript.log(`ERROR: codingcontract.getData() failed because it could find the specified contract ${fn} on server ${ip}`);
+                    return false;
+                }
+
+                // Convert answer to string. If the answer is a 2D array, then we have to
+                // manually add brackets for the inner arrays
+                if (is2DArray(answer)) {
+                    let answerComponents = [];
+                    for (let i = 0; i < answer.length; ++i) {
+                        answerComponents.push(["[", answer[i].toString(), "]"].join(""));
+                    }
+
+                    answer = answerComponents.join(",");
+                } else {
+                    answer = String(answer);
+                }
+
+                const serv = safeGetServer(ip, "codingcontract.attempt");
+                if (contract.isSolution(answer)) {
+                    const reward = Player.gainCodingContractReward(contract.reward, contract.getDifficulty());
+                    workerScript.log(`Successfully completed Coding Contract ${fn}. Reward: ${reward}`);
+                    serv.removeContract(fn);
+                    return returnReward ? reward : true;
+                } else {
+                    ++contract.tries;
+                    if (contract.tries >= contract.getMaxNumTries()) {
+                        workerScript.log(`Coding Contract ${fn} failed. Contract is now self-destructing`);
+                        serv.removeContract(fn);
+                    } else {
+                        workerScript.log(`Coding Contract ${fn} failed. ${contract.getMaxNumTries() - contract.tries} attempts remaining`);
+                    }
+
+                    return returnReward ? "" : false;
+                }
+            },
+            getContractType: function(fn, ip=workerScript.serverIp) {
+                updateDynamicRam("getContractType", getRamCost("codingcontract", "getContractType"));
+                let contract = getCodingContract(fn, ip);
+                if (contract == null) {
+                    workerScript.log(`ERROR: codingcontract.getData() failed because it could find the specified contract ${fn} on server ${ip}`);
+                    return null;
+                }
+                return contract.getType();
+            },
+            getData: function(fn, ip=workerScript.serverIp) {
+                updateDynamicRam("getData", getRamCost("codingcontract", "getData"));
+                let contract = getCodingContract(fn, ip);
+                if (contract == null) {
+                    workerScript.log(`ERROR: codingcontract.getData() failed because it could find the specified contract ${fn} on server ${ip}`);
+                    return null;
+                }
+                let data = contract.getData();
+                if (data.constructor === Array) {
+                    // For two dimensional arrays, we have to copy the internal arrays using
+                    // slice() as well. As of right now, no contract has arrays that have
+                    // more than two dimensions
+                    const copy = data.slice();
+                    for (let i = 0; i < copy.length; ++i) {
+                        if (data[i].constructor === Array) {
+                            copy[i] = data[i].slice();
+                        }
+                    }
+
+                    return copy;
+                } else {
+                    return data;
+                }
+            },
+            getDescription: function(fn, ip=workerScript.serverIp) {
+                updateDynamicRam("getDescription", getRamCost("codingcontract", "getDescription"));
+                var contract = getCodingContract(fn, ip);
+                if (contract == null) {
+                    workerScript.log(`ERROR: codingcontract.getDescription() failed because it could find the specified contract ${fn} on server ${ip}`);
+                    return "";
+                }
+                return contract.getDescription();
+            },
+            getNumTriesRemaining: function(fn, ip=workerScript.serverIp) {
+                updateDynamicRam("getNumTriesRemaining", getRamCost("codingcontract", "getNumTriesRemaining"));
+                var contract = getCodingContract(fn, ip);
+                if (contract == null) {
+                    workerScript.log(`ERROR: codingcontract.getNumTriesRemaining() failed because it could find the specified contract ${fn} on server ${ip}`);
+                    return -1;
+                }
+                return contract.getMaxNumTries() - contract.tries;
+            },
+        }, // End coding contracts
+
+        // Duplicate Sleeve API
+        sleeve: {
+            getNumSleeves: function() {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "getNumSleeves() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("getNumSleeves", getRamCost("sleeve", "getNumSleeves"));
+                return Player.sleeves.length;
+            },
+            setToShockRecovery: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToShockRecovery() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToShockRecovery", getRamCost("sleeve", "setToShockRecovery"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToShockRecovery(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                return Player.sleeves[sleeveNumber].shockRecovery(Player);
+            },
+            setToSynchronize: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToSynchronize() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToSynchronize", getRamCost("sleeve", "setToSynchronize"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToSynchronize(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                return Player.sleeves[sleeveNumber].synchronize(Player);
+            },
+            setToCommitCrime: function(sleeveNumber=0, crimeName="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToCommitCrime() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToCommitCrime", getRamCost("sleeve", "setToCommitCrime"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToCommitCrime(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                return Player.sleeves[sleeveNumber].commitCrime(Player, crimeName);
+            },
+            setToUniversityCourse: function(sleeveNumber=0, universityName="", className="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToUniversityCourse() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToUniversityCourse", getRamCost("sleeve", "setToUniversityCourse"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToUniversityCourse(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                return Player.sleeves[sleeveNumber].takeUniversityCourse(Player, universityName, className);
+            },
+            travel: function(sleeveNumber=0, cityName="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "travel() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("travel", getRamCost("sleeve", "travel"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.travel(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                return Player.sleeves[sleeveNumber].travel(Player, cityName);
+            },
+            setToCompanyWork: function(sleeveNumber=0, companyName="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToCompanyWork() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToCompanyWork", getRamCost("sleeve", "setToCompanyWork"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToCompanyWork(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                // Cannot work at the same company that another sleeve is working at
+                for (let i = 0; i < Player.sleeves.length; ++i) {
+                    if (i === sleeveNumber) { continue; }
+                    const other = Player.sleeves[i];
+                    if (other.currentTask === SleeveTaskType.Company && other.currentTaskLocation === companyName) {
+                        workerScript.log(`ERROR: sleeve.setToCompanyWork() failed for Sleeve ${sleeveNumber} because Sleeve ${i} is doing the same task`);
+                        return false;
+                    }
+                }
+
+                return Player.sleeves[sleeveNumber].workForCompany(Player, companyName);
+            },
+            setToFactionWork: function(sleeveNumber=0, factionName="", workType="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToFactionWork() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToFactionWork", getRamCost("sleeve", "setToFactionWork"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToFactionWork(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                // Cannot work at the same faction that another sleeve is working at
+                for (let i = 0; i < Player.sleeves.length; ++i) {
+                    if (i === sleeveNumber) { continue; }
+                    const other = Player.sleeves[i];
+                    if (other.currentTask === SleeveTaskType.Faction && other.currentTaskLocation === factionName) {
+                        workerScript.log(`ERROR: sleeve.setToFactionWork() failed for Sleeve ${sleeveNumber} because Sleeve ${i} is doing the same task`);
+                        return false;
+                    }
+                }
+
+                return Player.sleeves[sleeveNumber].workForFaction(Player, factionName, workType);
+            },
+            setToGymWorkout: function(sleeveNumber=0, gymName="", stat="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "setToGymWorkout() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("setToGymWorkout", getRamCost("sleeve", "setToGymWorkout"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.setToGymWorkout(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                return Player.sleeves[sleeveNumber].workoutAtGym(Player, gymName, stat);
+            },
+            getSleeveStats: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "getStats() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("getSleeveStats", getRamCost("sleeve", "getSleeveStats"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.workoutAtGym(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                const sl = Player.sleeves[sleeveNumber];
+                return {
+                    shock: 100 - sl.shock,
+                    sync: sl.sync,
+                    hacking_skill: sl.hacking_skill,
+                    strength: sl.strength,
+                    defense: sl.defense,
+                    dexterity: sl.dexterity,
+                    agility: sl.agility,
+                    charisma: sl.charisma,
+                };
+            },
+            getTask: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "getTask() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("getTask", getRamCost("sleeve", "getTask"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.getTask(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                const sl = Player.sleeves[sleeveNumber];
+                return {
+                    task:            SleeveTaskType[sl.currentTask],
+                    crime:           sl.crimeType,
+                    location:        sl.currentTaskLocation,
+                    gymStatType:     sl.gymStatType,
+                    factionWorkType: FactionWorkType[sl.factionWorkType],
+                };
+            },
+            getInformation: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "getInformation() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("getInformation", getRamCost("sleeve", "getInformation"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.getInformation(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                const sl = Player.sleeves[sleeveNumber];
+                return {
+                    city:     sl.city,
+                    hp:       sl.hp,
+                    jobs:     Object.keys(Player.jobs), // technically sleeves have the same jobs as the player.
+                    jobTitle: Object.values(Player.jobs),
+                    maxHp:    sl.max_hp,
+                    tor:      SpecialServerIps.hasOwnProperty("Darkweb Server"), // There's no reason not to give that infomation here as well. Worst case scenario it isn't used.
+
+                    mult: {
+                        agility:      sl.agility_mult,
+                        agilityExp:   sl.agility_exp_mult,
+                        companyRep:   sl.company_rep_mult,
+                        crimeMoney:   sl.crime_money_mult,
+                        crimeSuccess: sl.crime_success_mult,
+                        defense:      sl.defense_mult,
+                        defenseExp:   sl.defense_exp_mult,
+                        dexterity:    sl.dexterity_mult,
+                        dexterityExp: sl.dexterity_exp_mult,
+                        factionRep:   sl.faction_rep_mult,
+                        hacking:      sl.hacking_mult,
+                        hackingExp:   sl.hacking_exp_mult,
+                        strength:     sl.strength_mult,
+                        strengthExp:  sl.strength_exp_mult,
+                        workMoney:    sl.work_money_mult,
+                    },
+
+                    timeWorked: sl.currentTaskTime,
+                    earningsForSleeves : {
+                            workHackExpGain: sl.earningsForSleeves.hack,
+                            workStrExpGain:  sl.earningsForSleeves.str,
+                            workDefExpGain:  sl.earningsForSleeves.def,
+                            workDexExpGain:  sl.earningsForSleeves.dex,
+                            workAgiExpGain:  sl.earningsForSleeves.agi,
+                            workChaExpGain:  sl.earningsForSleeves.cha,
+                            workMoneyGain:   sl.earningsForSleeves.money,
+                    },
+                    earningsForPlayer : {
+                            workHackExpGain: sl.earningsForPlayer.hack,
+                            workStrExpGain:  sl.earningsForPlayer.str,
+                            workDefExpGain:  sl.earningsForPlayer.def,
+                            workDexExpGain:  sl.earningsForPlayer.dex,
+                            workAgiExpGain:  sl.earningsForPlayer.agi,
+                            workChaExpGain:  sl.earningsForPlayer.cha,
+                            workMoneyGain:   sl.earningsForPlayer.money,
+                    },
+                    earningsForTask : {
+                            workHackExpGain: sl.earningsForTask.hack,
+                            workStrExpGain:  sl.earningsForTask.str,
+                            workDefExpGain:  sl.earningsForTask.def,
+                            workDexExpGain:  sl.earningsForTask.dex,
+                            workAgiExpGain:  sl.earningsForTask.agi,
+                            workChaExpGain:  sl.earningsForTask.cha,
+                            workMoneyGain:   sl.earningsForTask.money,
+                    },
+                    workRepGain:     sl.getRepGain(Player),
+                }
+            },
+            getSleeveAugmentations: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "getSleeveAugmentations() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("getSleeveAugmentations", getRamCost("sleeve", "getSleeveAugmentations"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.getSleeveAugmentations(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return [];
+                }
+
+                const augs = [];
+                for (let i = 0; i < Player.sleeves[sleeveNumber].augmentations.length; i++) {
+                    augs.push(Player.sleeves[sleeveNumber].augmentations[i].name);
+                }
+                return augs;
+            },
+            getSleevePurchasableAugs: function(sleeveNumber=0) {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "getSleevePurchasableAugs() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("getSleevePurchasableAugs", getRamCost("sleeve", "getSleevePurchasableAugs"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.getSleevePurchasableAugs(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return [];
+                }
+
+                const purchasableAugs = findSleevePurchasableAugs(Player.sleeves[sleeveNumber], Player);
+                const augs = [];
+                for (let i = 0; i < purchasableAugs.length; i++) {
+                    const aug = purchasableAugs[i];
+                    augs.push({
+                        name: aug.name,
+                        cost: aug.startingCost,
+                    });
+                }
+
+                return augs;
+            },
+            purchaseSleeveAug: function(sleeveNumber=0, augName="") {
+                if (Player.bitNodeN !== 10 && !SourceFileFlags[10]) {
+                    throw makeRuntimeRejectMsg(workerScript, "purchaseSleeveAug() failed because you do not currently have access to the Sleeve API. This is either because you are not in BitNode-10 or because you do not have Source-File 10");
+                }
+                updateDynamicRam("purchaseSleeveAug", getRamCost("sleeve", "purchaseSleeveAug"));
+                if (sleeveNumber >= Player.sleeves.length || sleeveNumber < 0) {
+                    workerScript.log(`ERROR: sleeve.purchaseSleeveAug(${sleeveNumber}) failed because it is an invalid sleeve number.`);
+                    return false;
+                }
+
+                const aug = Augmentations[augName];
+                if (!aug) {
+                    workerScript.log(`ERROR: sleeve.purchaseSleeveAug(${sleeveNumber}) failed because ${augName} is not a valid aug.`);
+                }
+
+                return Player.sleeves[sleeveNumber].tryBuyAugmentation(Player, aug);
+            }
+        }, // End sleeve
+        heart: {
+            // Easter egg function
+            break: function() {
+                return Player.karma;
+            }
+        }
+    } // End return
+} // End NetscriptFunction()
+
+export { NetscriptFunctions };

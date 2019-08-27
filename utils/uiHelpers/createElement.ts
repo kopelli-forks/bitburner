@@ -12,10 +12,13 @@ interface ICreateElementAnchorOptions {
  */
 interface ICreateElementInputOptions {
     checked?: boolean;
+    max?: string;
     maxLength?: number;
+    min?: string;
     name?: string;
     pattern?: string;
     placeholder?: string;
+    step?: string;
     type?: string;
     value?: string;
 }
@@ -35,6 +38,7 @@ interface ICreateElementListenerOptions {
     clickListener?(this: HTMLElement, ev: MouseEvent): any;
     inputListener?(this: HTMLElement, ev: Event): any;
     onfocus?(this: HTMLElement, ev: FocusEvent): any;
+    onkeydown?(this: HTMLElement, ev: KeyboardEvent): any;
     onkeyup?(this: HTMLElement, ev: KeyboardEvent): any;
 }
 
@@ -52,6 +56,7 @@ interface ICreateElementStyleOptions {
     margin?: string;
     marginLeft?: string;
     marginTop?: string;
+    overflow?: string;
     padding?: string;
     position?: string;
     visibility?: string;
@@ -65,6 +70,8 @@ interface ICreateElementStyleOptions {
 interface ICreateElementTooltipOptions {
     tooltip?: string;
     tooltipleft?: string;
+    tooltipsmall?: string;
+    tooltiplow?: string;
 }
 
 /**
@@ -126,6 +133,15 @@ function setElementInput(el: HTMLInputElement, params: ICreateElementInputOption
     if (params.placeholder !== undefined) {
         el.placeholder = params.placeholder;
     }
+    if (params.max !== undefined) {
+        el.max = params.max;
+    }
+    if (params.min !== undefined) {
+        el.min = params.min;
+    }
+    if (params.step !== undefined) {
+        el.step = params.step;
+    }
 }
 
 function setElementLabel(el: HTMLLabelElement, params: ICreateElementLabelOptions) {
@@ -147,6 +163,9 @@ function setElementListeners(el: HTMLElement, params: ICreateElementListenerOpti
     }
     if (params.onkeyup !== undefined) {
         el.addEventListener("keyup", params.onkeyup);
+    }
+    if (params.onkeydown !== undefined) {
+        el.addEventListener("keydown", params.onkeydown);
     }
     if (params.onfocus !== undefined) {
         el.addEventListener("focus", params.onfocus);
@@ -197,6 +216,9 @@ function setElementStyle(el: HTMLElement, params: ICreateElementStyleOptions) {
     if (params.position !== undefined) {
         el.style.position = params.position;
     }
+    if (params.overflow !== undefined) {
+        el.style.overflow = params.overflow;
+    }
 }
 
 function setElementTooltip(el: HTMLElement, params: ICreateElementTooltipOptions) {
@@ -211,6 +233,18 @@ function setElementTooltip(el: HTMLElement, params: ICreateElementTooltipOptions
         el.appendChild(createElement("span", {
             class: "tooltiptextleft",
             innerHTML: params.tooltipleft,
+        }));
+    } else if (params.tooltipsmall !== undefined) {
+        el.className += " tooltip";
+        el.appendChild(createElement("span", {
+            class: "tooltiptext smallfont",
+            innerHTML: params.tooltipsmall,
+        }));
+    } else if (params.tooltiplow !== undefined) {
+        el.className += "tooltip";
+        el.appendChild(createElement("span", {
+            class: "tooltiptextlow",
+            innerHTML: params.tooltiplow,
         }));
     }
 }

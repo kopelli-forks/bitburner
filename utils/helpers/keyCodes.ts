@@ -12,6 +12,7 @@ export const KEY: IMap<number> = {
     DOWNARROW:      40,
     E:              69,
     ENTER:          13,
+    ESC:            27,
     F:              70,
     H:              72,
     J:              74,
@@ -27,4 +28,6 @@ export const KEY: IMap<number> = {
     U:              85,
     UPARROW:        38,
     W:              87,
+    "1":            49,
+    "2":            50,
 };

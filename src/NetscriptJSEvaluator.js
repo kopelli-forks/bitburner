@@ -1,8 +1,20 @@
-import {makeRuntimeRejectMsg} from "./NetscriptEvaluator";
+import { makeRuntimeRejectMsg } from "./NetscriptEvaluator";
+import { Script } from "./Script/Script";
 
 // Makes a blob that contains the code of a given script.
 export function makeScriptBlob(code) {
     return new Blob([code], {type: "text/javascript"});
+}
+
+class ScriptUrl {
+    /**
+     * @param {string} filename
+     * @param {string} url
+     */
+    constructor(filename, url) {
+        this.filename = filename;
+        this.url = url;
+    }
 }
 
 // Begin executing a user JS script, and return a promise that resolves
@@ -15,9 +27,9 @@ export function makeScriptBlob(code) {
 // running the main function of the script.
 export async function executeJSScript(scripts = [], workerScript) {
     let loadedModule;
-    let urlStack = null;
+    let urls = null;
     let script = workerScript.getScript();
-    if (script.module === "") {
+    if (shouldCompile(script, scripts)) {
         // The URL at the top is the one we want to import. It will
         // recursively import all the other modules in the urlStack.
         //
@@ -25,14 +37,13 @@ export async function executeJSScript(scripts = [], workerScript) {
         // but not really behaves like import. Particularly, it cannot
         // load fully dynamic content. So we hide the import from webpack
         // by placing it inside an eval call.
-        urlStack = _getScriptUrls(script, scripts, []);
-        script.module = await eval('import(urlStack[urlStack.length - 1])');
+        urls = _getScriptUrls(script, scripts, []);
+        script.module = new Promise(resolve => resolve(eval('import(urls[urls.length - 1].url)')));
+        script.dependencies = urls.map(u => u.filename);
     }
-    loadedModule = script.module;
+    loadedModule = await script.module;
 
     let ns      = workerScript.env.vars;
-    //ns.threads  = workerScript.threads;
-    //ns.args     = workerScript.args;
 
     try {
         // TODO: putting await in a non-async function yields unhelpful
@@ -43,10 +54,29 @@ export async function executeJSScript(scripts = [], workerScript) {
         return loadedModule.main(ns);
     } finally {
         // Revoke the generated URLs
-        if (urlStack != null) {
-            for (const url in urlStack) URL.revokeObjectURL(url);
+        if (urls != null) {
+            for (const b in urls) URL.revokeObjectURL(b.url);
         }
     };
+}
+
+/** Returns whether we should compile the script parameter.
+ *
+ * @param {Script} script
+ * @param {Script[]} scripts
+ */
+function shouldCompile(script, scripts) {
+    if (script.module === "") return true;
+    return script.dependencies.some(dep => {
+        const depScript = scripts.find(s => s.filename == dep);
+
+        // If the script is not present on the server, we should recompile, if only to get any necessary
+        // compilation errors.
+        if (!depScript) return true;
+
+        const depIsMoreRecent = depScript.moduleSequenceNumber > script.moduleSequenceNumber
+        return depIsMoreRecent;
+    });
 }
 
 // Gets a stack of blob urls, the top/right-most element being
@@ -54,15 +84,24 @@ export async function executeJSScript(scripts = [], workerScript) {
 //
 // - script -- the script for whom we are getting a URL.
 // - scripts -- all the scripts available on this server
-// - envHeader -- the preamble that goes at the start of every NSJS script.
 // - seen -- The modules above this one -- to prevent mutual dependency.
 //
 // TODO We don't make any effort to cache a given module when it is imported at
 // different parts of the tree. That hasn't presented any problem with during
 // testing, but it might be an idea for the future. Would require a topo-sort
 // then url-izing from leaf-most to root-most.
-function _getScriptUrls(script, scripts, seen) {
+/**
+ * @param {Script} script
+ * @param {Script[]} scripts
+ * @param {Script[]} seen
+ * @returns {ScriptUrl[]} All of the compiled scripts, with the final one
+ *                         in the list containing the blob corresponding to
+ *                         the script parameter.
+ */
+// BUG: apparently seen is never consulted. Oops.
+export function _getScriptUrls(script, scripts, seen) {
     // Inspired by: https://stackoverflow.com/a/43834063/91401
+    /** @type {ScriptUrl[]} */
     const urlStack = [];
     seen.push(script);
     try {
@@ -76,7 +115,7 @@ function _getScriptUrls(script, scripts, seen) {
         // import {foo} from "blob://<uuid>"
         //
         // Where the blob URL contains the script content.
-        const transformedCode = script.code.replace(/((?:from|import)\s+(?:'|"))([^'"]+)('|";)/g,
+        let transformedCode = script.code.replace(/((?:from|import)\s+(?:'|"))(?:\.\/)?([^'"]+)('|";)/g,
             (unmodified, prefix, filename, suffix) => {
                 const isAllowedImport = scripts.some(s => s.filename == filename);
                 if (!isAllowedImport) return unmodified;
@@ -89,13 +128,17 @@ function _getScriptUrls(script, scripts, seen) {
 
                 // The top url in the stack is the replacement import file for this script.
                 urlStack.push(...urls);
-                return [prefix, urls[urls.length - 1], suffix].join('');
-            });
+                return [prefix, urls[urls.length - 1].url, suffix].join('');
+            }
+        );
 
+        // We automatically define a print function() in the NetscriptJS module so that
+        // accidental calls to window.print() do not bring up the "print screen" dialog
+        transformedCode += `\n\nfunction print() {throw new Error("Invalid call to window.print(). Did you mean to use Netscript's print()?");}`
 
         // If we successfully transformed the code, create a blob url for it and
         // push that URL onto the top of the stack.
-        urlStack.push(URL.createObjectURL(makeScriptBlob(transformedCode)));
+        urlStack.push(new ScriptUrl(script.filename, URL.createObjectURL(makeScriptBlob(transformedCode))));
         return urlStack;
     } catch (err) {
         // If there is an error, we need to clean up the URLs.
