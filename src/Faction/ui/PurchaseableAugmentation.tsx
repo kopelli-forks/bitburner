@@ -17,10 +17,12 @@ import { AugmentationNames } from "../../Augmentation/data/AugmentationNames";
 import { Faction } from "../../Faction/Faction";
 import { IPlayer } from "../../PersonObjects/IPlayer";
 import { Settings } from "../../Settings/Settings";
-import { numeralWrapper } from "../../ui/numeralFormat";
+import { Money } from "../../ui/React/Money";
+import { Reputation } from "../../ui/React/Reputation";
 import { IMap } from "../../types";
 
 import { StdButton } from "../../ui/React/StdButton";
+import { Augmentation as AugFormat } from "../../ui/React/Augmentation";
 
 type IProps = {
     augName: string;
@@ -39,35 +41,37 @@ const inlineStyleMarkup = {
 }
 
 export class PurchaseableAugmentation extends React.Component<IProps, any> {
-    aug: Augmentation | null;
+    aug: Augmentation;
 
     constructor(props: IProps) {
         super(props);
 
-        this.aug = Augmentations[this.props.augName];
+        const aug = Augmentations[this.props.augName];
+        if(aug == null) throw new Error(`aug ${this.props.augName} does not exists`);
+        this.aug = aug;
 
         this.handleClick = this.handleClick.bind(this);
     }
 
     getMoneyCost(): number {
-        return this.aug!.baseCost * this.props.faction.getInfo().augmentationPriceMult;
+        return this.aug.baseCost * this.props.faction.getInfo().augmentationPriceMult;
     }
 
     getRepCost(): number {
-        return this.aug!.baseRepRequirement * this.props.faction.getInfo().augmentationRepRequirementMult;
+        return this.aug.baseRepRequirement * this.props.faction.getInfo().augmentationRepRequirementMult;
     }
 
-    handleClick() {
+    handleClick(): void {
         if (!Settings.SuppressBuyAugmentationConfirmation) {
-            purchaseAugmentationBoxCreate(this.aug!, this.props.faction);
+            purchaseAugmentationBoxCreate(this.aug, this.props.faction);
         } else {
-            purchaseAugmentation(this.aug!, this.props.faction);
+            purchaseAugmentation(this.aug, this.props.faction);
         }
     }
 
     // Whether the player has the prerequisite Augmentations
     hasPrereqs(): boolean {
-        return hasAugmentationPrereqs(this.aug!);
+        return hasAugmentationPrereqs(this.aug);
     }
 
     // Whether the player has enough rep for this Augmentation
@@ -95,7 +99,7 @@ export class PurchaseableAugmentation extends React.Component<IProps, any> {
         return owned;
     }
 
-    render() {
+    render(): React.ReactNode {
         if (this.aug == null) {
             console.error(`Invalid Augmentation when trying to create PurchaseableAugmentation display element: ${this.props.augName}`);
             return null;
@@ -105,21 +109,20 @@ export class PurchaseableAugmentation extends React.Component<IProps, any> {
         const repCost = this.getRepCost();
 
         // Determine UI properties
-        let disabled: boolean = false;
-        let statusTxt: string = "";
-        let color: string = "";
+        let disabled = false;
+        let status: JSX.Element = <></>;
+        let color = "";
         if (!this.hasPrereqs()) {
             disabled = true;
-            statusTxt = `LOCKED (Requires ${this.aug.prereqs.join(",")} as prerequisite(s))`;
+            status = <>LOCKED (Requires {this.aug.prereqs.map(aug => AugFormat(aug))} as prerequisite)</>;
             color = "red";
         } else if (this.aug.name !== AugmentationNames.NeuroFluxGovernor && (this.aug.owned || this.owned())) {
             disabled = true;
-            statusTxt = "ALREADY OWNED";
         } else if (this.hasReputation()) {
-            statusTxt = `UNLOCKED - ${numeralWrapper.formatMoney(moneyCost)}`;
+            status = <>UNLOCKED (at {Reputation(repCost)} faction reputation) - {Money(moneyCost)}</>;
         } else {
             disabled = true;
-            statusTxt = `LOCKED (Requires ${numeralWrapper.format(repCost, "0,0.0")} faction reputation - ${numeralWrapper.formatMoney(moneyCost)})`;
+            status = <>LOCKED (Requires {Reputation(repCost)} faction reputation - {Money(moneyCost)})</>;
             color = "red";
         }
 
@@ -144,7 +147,7 @@ export class PurchaseableAugmentation extends React.Component<IProps, any> {
                         text={btnTxt}
                         tooltip={this.aug.info}
                     />
-                    <p style={txtStyle}>{statusTxt}</p>
+                    <p style={txtStyle}>{status}</p>
                 </span>
             </li>
         )

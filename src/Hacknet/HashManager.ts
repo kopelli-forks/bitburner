@@ -7,6 +7,7 @@
  * those upgrades
  */
 import { HashUpgrades } from "./HashUpgrades";
+import { HashUpgrade } from "./HashUpgrade";
 
 import { IMap } from "../types";
 import { Generic_fromJSON,
@@ -14,17 +15,13 @@ import { Generic_fromJSON,
          Reviver } from "../../utils/JSONReviver";
 
 export class HashManager {
-    // Initiatizes a HashManager object from a JSON save state.
-    static fromJSON(value: any): HashManager {
-        return Generic_fromJSON(HashManager, value.data);
-    }
 
     // Max number of hashes this can hold. Equal to the sum of capacities of
     // all Hacknet Servers
-    capacity: number = 0;
+    capacity = 0;
 
     // Number of hashes currently in storage
-    hashes: number = 0;
+    hashes = 0;
 
     // Map of Hash Upgrade Name -> levels in that upgrade
     upgrades: IMap<number> = {};
@@ -67,11 +64,20 @@ export class HashManager {
         return this.getMult(upgName);
     }
 
+    getUpgrade(upgName: string): HashUpgrade | null {
+        const upg = HashUpgrades[upgName];
+        if (!upg) {
+            console.error(`Invalid Upgrade Name given to HashManager.getUpgrade(): ${upgName}`);
+            return null;
+        }
+        return upg;
+    }
+
     /**
      * Get the cost (in hashes) of an upgrade
      */
     getUpgradeCost(upgName: string): number {
-        const upg = HashUpgrades[upgName];
+        const upg = this.getUpgrade(upgName);
         const currLevel = this.upgrades[upgName];
         if (upg == null || currLevel == null) {
             console.error(`Invalid Upgrade Name given to HashManager.getUpgradeCost(): ${upgName}`);
@@ -148,6 +154,12 @@ export class HashManager {
     //Serialize the current object to a JSON save state.
     toJSON(): any {
         return Generic_toJSON("HashManager", this);
+    }
+
+    // Initiatizes a HashManager object from a JSON save state.
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    static fromJSON(value: any): HashManager {
+        return Generic_fromJSON(HashManager, value.data);
     }
 }
 

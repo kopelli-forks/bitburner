@@ -12,7 +12,7 @@ import { MoneySourceTracker } from "../../utils/MoneySourceTracker";
 import {
     Reviver,
     Generic_toJSON,
-    Generic_fromJSON
+    Generic_fromJSON,
 } from "../../../utils/JSONReviver";
 
 import Decimal from "decimal.js";
@@ -201,7 +201,9 @@ export function PlayerObject() {
 
     // Production since last Augmentation installation
     this.scriptProdSinceLastAug = 0;
-};
+
+    this.exploits = [];
+}
 
 // Apply player methods to the prototype using Object.assign()
 Object.assign(
@@ -211,7 +213,7 @@ Object.assign(
     bladeburnerMethods,
     corporationMethods,
     gangMethods,
-    augmentationMethods
+    augmentationMethods,
 );
 
 PlayerObject.prototype.toJSON = function() {

@@ -4,8 +4,6 @@ import { getBaseResearchTreeCopy,
 
 import { numeralWrapper } from "../ui/numeralFormat";
 
-import { Reviver } from "../../utils/JSONReviver";
-
 interface IIndustryMap<T> {
     Energy: T;
     Utilities: T;
@@ -64,13 +62,13 @@ export const IndustryDescriptions: IIndustryMap<string> = {
     Energy: "Engage in the production and distribution of energy.<br><br>" +
             "Starting cost: " + numeralWrapper.format(IndustryStartingCosts.Energy, "$0.000a") + "<br>" +
             "Recommended starting Industry: NO",
-    Utilities: "Distributes water and provides wastewater services.<br><br>" +
+    Utilities: "Distribute water and provide wastewater services.<br><br>" +
                "Starting cost: " + numeralWrapper.format(IndustryStartingCosts.Utilities, "$0.000a") + "<br>" +
                "Recommended starting Industry: NO",
-    Agriculture: "Cultive crops and breed livestock to produce food.<br><br>" +
+    Agriculture: "Cultivate crops and breed livestock to produce food.<br><br>" +
                  "Starting cost: " + numeralWrapper.format(IndustryStartingCosts.Agriculture, "$0.000a") + "<br>" +
                  "Recommended starting Industry: YES",
-    Fishing: "Produce food through the breeding and processing of fish and fish products<br><br>" +
+    Fishing: "Produce food through the breeding and processing of fish and fish products.<br><br>" +
              "Starting cost: " + numeralWrapper.format(IndustryStartingCosts.Fishing, "$0.000a") + "<br>" +
              "Recommended starting Industry: NO",
     Mining: "Extract and process metals from the earth.<br><br>" +
@@ -82,7 +80,7 @@ export const IndustryDescriptions: IIndustryMap<string> = {
     Tobacco: "Create and distribute tobacco and tobacco-related products.<br><br>" +
              "Starting cost: " + numeralWrapper.format(IndustryStartingCosts.Tobacco, "$0.000a") + "<br>" +
              "Recommended starting Industry: YES",
-    Chemical: "Product industrial chemicals<br><br>" +
+    Chemical: "Produce industrial chemicals.<br><br>" +
               "Starting cost: " + numeralWrapper.format(IndustryStartingCosts.Chemical, "$0.000a") + "<br>" +
               "Recommended starting Industry: NO",
     Pharmaceutical: "Discover, develop, and create new pharmaceutical drugs.<br><br>" +
@@ -107,7 +105,7 @@ export const IndustryDescriptions: IIndustryMap<string> = {
 
 // Map of available Research for each Industry. This data is held in a
 // ResearchTree object
-export let IndustryResearchTrees: IIndustryMap<ResearchTree> = {
+export const IndustryResearchTrees: IIndustryMap<ResearchTree> = {
     Energy: getBaseResearchTreeCopy(),
     Utilities: getBaseResearchTreeCopy(),
     Agriculture: getBaseResearchTreeCopy(),
@@ -124,7 +122,7 @@ export let IndustryResearchTrees: IIndustryMap<ResearchTree> = {
     RealEstate: getProductIndustryResearchTreeCopy(),
 }
 
-export function resetIndustryResearchTrees() {
+export function resetIndustryResearchTrees(): void {
     IndustryResearchTrees.Energy         = getBaseResearchTreeCopy();
     IndustryResearchTrees.Utilities      = getBaseResearchTreeCopy();
     IndustryResearchTrees.Agriculture    = getBaseResearchTreeCopy();

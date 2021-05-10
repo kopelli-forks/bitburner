@@ -21,8 +21,16 @@ import { CompanyPositions }         from "../../Company/CompanyPositions";
 import * as posNames                from "../../Company/data/companypositionnames";
 import { IPlayer }                  from "../../PersonObjects/IPlayer";
 
-import { numeralWrapper }           from "../../ui/numeralFormat";
 import { StdButton }                from "../../ui/React/StdButton";
+import { Reputation }               from "../../ui/React/Reputation";
+import { Favor }                    from "../../ui/React/Favor";
+
+import {
+    yesNoBoxGetYesButton,
+    yesNoBoxGetNoButton,
+    yesNoBoxClose,
+    yesNoBoxCreate,
+} from "../../../utils/YesNoBox";
 
 type IProps = {
     engine: IEngine;
@@ -32,6 +40,10 @@ type IProps = {
 
 type IState = {
     employedHere: boolean;
+}
+
+const blockStyleMarkup = {
+    display: "block",
 }
 
 export class CompanyLocation extends React.Component<IProps, IState> {
@@ -50,7 +62,7 @@ export class CompanyLocation extends React.Component<IProps, IState> {
     /**
      * Stores button styling that sets them all to block display
      */
-    btnStyle: object;
+    btnStyle: any;
 
     /**
      * Reference to the Location that this component is being rendered for
@@ -67,6 +79,7 @@ export class CompanyLocation extends React.Component<IProps, IState> {
 
         this.btnStyle = { display: "block" };
 
+        this.quit = this.quit.bind(this);
         this.applyForAgentJob = this.applyForAgentJob.bind(this);
         this.applyForBusinessConsultantJob = this.applyForBusinessConsultantJob.bind(this);
         this.applyForBusinessJob = this.applyForBusinessJob.bind(this);
@@ -98,73 +111,73 @@ export class CompanyLocation extends React.Component<IProps, IState> {
         this.checkIfEmployedHere(false);
     }
 
-    applyForAgentJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForAgentJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForAgentJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForBusinessConsultantJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForBusinessConsultantJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForBusinessConsultantJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForBusinessJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForBusinessJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForBusinessJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForEmployeeJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForEmployeeJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForEmployeeJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForItJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForItJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForItJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForPartTimeEmployeeJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForPartTimeEmployeeJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForPartTimeEmployeeJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForPartTimeWaiterJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForPartTimeWaiterJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForPartTimeWaiterJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForSecurityJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForSecurityJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForSecurityJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForSoftwareConsultantJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForSoftwareConsultantJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForSoftwareConsultantJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForSoftwareJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForSoftwareJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForSoftwareJob();
         this.checkIfEmployedHere(true);
     }
 
-    applyForWaiterJob(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    applyForWaiterJob(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         this.props.p.applyForWaiterJob();
         this.checkIfEmployedHere(true);
     }
 
-    checkIfEmployedHere(updateState=false) {
+    checkIfEmployedHere(updateState=false): void {
         this.jobTitle = this.props.p.jobs[this.props.locName];
         if (this.jobTitle != null) {
             this.companyPosition = CompanyPositions[this.jobTitle];
@@ -172,24 +185,24 @@ export class CompanyLocation extends React.Component<IProps, IState> {
 
         if (updateState) {
             this.setState({
-                employedHere: this.jobTitle != null
+                employedHere: this.jobTitle != null,
             });
         }
     }
 
-    startInfiltration(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    startInfiltration(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
         const loc = this.location;
 
         this.props.engine.loadInfiltrationContent();
 
         const data = loc.infiltrationData;
-        if (data == null) { return false; }
+        if (data == null) { return; }
         beginInfiltration(this.props.locName, data.startingSecurityLevel, data.baseRewardValue, data.maxClearanceLevel, data.difficulty);
     }
 
-    work(e: React.MouseEvent<HTMLElement>) {
-        if (!e.isTrusted) { return false; }
+    work(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
 
         const pos = this.companyPosition;
         if (pos instanceof CompanyPosition) {
@@ -201,7 +214,27 @@ export class CompanyLocation extends React.Component<IProps, IState> {
         }
     }
 
-    render() {
+    quit(e: React.MouseEvent<HTMLElement>): void {
+        if (!e.isTrusted) { return; }
+
+        const yesBtn = yesNoBoxGetYesButton();
+        const noBtn = yesNoBoxGetNoButton();
+        if (yesBtn == null || noBtn == null) { return; }
+        yesBtn.innerHTML = "Quit job";
+        noBtn.innerHTML = "Cancel";
+        yesBtn.addEventListener("click", () => {
+            this.props.p.quitJob(this.props.locName);
+            this.checkIfEmployedHere(true);
+            yesNoBoxClose();
+        });
+        noBtn.addEventListener("click", () => {
+            yesNoBoxClose();
+        });
+
+        yesNoBoxCreate(<>Would you like to quit your job at {this.company.name}?</>);
+    }
+
+    render(): React.ReactNode {
         const isEmployedHere = this.jobTitle != null;
         const favorGain = this.company.getFavorGain();
 
@@ -211,28 +244,31 @@ export class CompanyLocation extends React.Component<IProps, IState> {
                     isEmployedHere &&
                     <div>
                         <p>Job Title: {this.jobTitle}</p>
-                        <p>--------------------</p>
+                        <br /><p style={blockStyleMarkup}>-------------------------</p><br />
                         <p className={"tooltip"}>
-                            Company reputation: {numeralWrapper.format(this.company.playerReputation, "0,0.000")}
+                            Company reputation: {Reputation(this.company.playerReputation)}
                             <span className={"tooltiptext"}>
-                                You will earn {numeralWrapper.format(favorGain[0], "0,0")} company
+                                You will earn {Favor(favorGain[0])} company
                                 favor upon resetting after installing Augmentations
                             </span>
-                        </p>
-                        <p>--------------------</p>
+                        </p><br />
+                        <br /><p style={blockStyleMarkup}>-------------------------</p><br />
                         <p className={"tooltip"}>
-                            Company Favor: {numeralWrapper.format(this.company.favor, "0,0")}
+                            Company Favor: {Favor(this.company.favor)}
                             <span className={"tooltiptext"}>
                                 Company favor increases the rate at which you earn reputation for this company by
                                 1% per favor. Company favor is gained whenever you reset after installing Augmentations. The amount
                                 of favor you gain depends on how much reputation you have with the comapny.
                             </span>
-                        </p>
+                        </p><br />
+                        <br /><p style={blockStyleMarkup}>-------------------------</p><br />
                         <StdButton
-                            id={"foo-work-button-id"}
                             onClick={this.work}
-                            style={this.btnStyle}
                             text={"Work"}
+                        />&nbsp;&nbsp;&nbsp;&nbsp;
+                        <StdButton
+                            onClick={this.quit}
+                            text={"Quit"}
                         />
                     </div>
                 }

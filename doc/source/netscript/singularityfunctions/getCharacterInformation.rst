@@ -3,6 +3,10 @@ getCharacterInformation() Netscript Function
 
 .. js:function:: getCharacterInformation()
 
+    .. warning:: This function is deprecated.
+
+    :RAM cost: 0.5 GB
+
     If you are not in BitNode-4, then you must have Level 1 of Source-File 4 in order to run this function.
 
     Returns an object with various information about your character. The object has the following properties::
@@ -47,4 +51,10 @@ getCharacterInformation() Netscript Function
             workChaExpGain:         Cha experience earned so far from work
             workRepGain:            Reputation earned so far from work, if applicable
             workMoneyGain:          Money earned so far from work, if applicable
+            hackingExp:             Total hacking experience
+            strengthExp:            Total strength experience
+            defenseExp:             Total defense experience
+            dexterityExp:           Total dexterity experience
+            agilityExp:             Total agility experience
+            charismaExp:            Total charisma experience
         }

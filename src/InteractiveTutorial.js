@@ -3,6 +3,7 @@ import { Player } from "./Player";
 import { Settings } from "./Settings/Settings";
 
 import { initializeMainMenuLinks } from "./ui/MainMenu/Links";
+import { LiteratureNames } from "./Literature/data/LiteratureNames";
 
 import { exceptionAlert } from "../utils/helpers/exceptionAlert";
 import { clearEventListeners } from "../utils/uiHelpers/clearEventListeners";
@@ -41,7 +42,7 @@ const orderedITutorialSteps = [
     "HacknetNodesGoToWorldPage",
     "WorldDescription",
     "TutorialPageInfo",
-    "End"
+    "End",
 ]
 
 // Create an 'enum' for the Steps
@@ -69,7 +70,6 @@ function iTutorialStart() {
 
     // Don't autosave during this interactive tutorial
     Engine.Counters.autoSaveCounter = Infinity;
-    console.log("Interactive Tutorial started");
     ITutorial.currStep = 0;
     ITutorial.isRunning = true;
 
@@ -100,7 +100,7 @@ function iTutorialStart() {
 }
 
 function iTutorialEvaluateStep() {
-    if (!ITutorial.isRunning) {console.log("Interactive Tutorial not running"); return;}
+    if (!ITutorial.isRunning) {return;}
 
     // Disable and clear main menu
     var terminalMainMenu        = clearEventListeners("terminal-menu-link");
@@ -476,8 +476,6 @@ function iTutorialEnd() {
         Engine.Counters.autoSaveCounter = Settings.AutosaveInterval * 5;
     }
 
-    console.log("Ending interactive tutorial");
-
     // Initialize references to main menu links
     // We have to call initializeMainMenuLinks() again because the Interactive Tutorial
     // re-creates Main menu links with clearEventListeners()
@@ -502,17 +500,17 @@ function iTutorialEnd() {
         "<a class='a-link-button' href='https://bitburner.readthedocs.io/en/latest/guidesandtips/gettingstartedguideforbeginnerprogrammers.html' target='_blank'>Getting Started Guide</a>" +
         "<a class='a-link-button' href='https://bitburner.readthedocs.io/en/latest/' target='_blank'>Documentation</a><br><br>"  +
         "The Beginner's Guide to Hacking was added to your home computer! It contains some tips/pointers for starting out with the game. " +
-        "To read it, go to Terminal and enter<br><br>cat hackers-starting-handbook.lit"
+        "To read it, go to Terminal and enter<br><br>cat " + LiteratureNames.HackersStartingHandbook,
     });
     var gotitBtn = createElement("a", {
         class:"a-link-button", float:"right", padding:"6px", innerText:"Got it!",
         clickListener:()=>{
             removeElementById(popupId);
-        }
+        },
     });
     createPopup(popupId, [txt, gotitBtn]);
 
-    Player.getHomeComputer().messages.push("hackers-starting-handbook.lit");
+    Player.getHomeComputer().messages.push(LiteratureNames.HackersStartingHandbook);
 }
 
 function iTutorialSetText(txt) {

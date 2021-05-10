@@ -4,16 +4,16 @@
 import * as React       from "react";
 
 export interface IParagraphWithTooltipProps {
-    style?: object;
-    text: string;
+    style?: any;
+    content: JSX.Element;
     tooltip: string;
 }
 
 export class ParagraphWithTooltip extends React.Component<IParagraphWithTooltipProps, any> {
-    render() {
+    render(): React.ReactNode {
         return (
             <p className={"tooltip"} style={this.props.style}>
-                {this.props.text}
+                {this.props.content}
                 <span className={"tooltiptext"}>
                     {this.props.tooltip}
                 </span>

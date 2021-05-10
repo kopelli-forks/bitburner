@@ -3,4 +3,11 @@ getSkillPoints() Netscript Function
 
 .. js:function:: getSkillPoints()
 
-    Returns the number of Bladeburner skill points you have
+    :RAM cost: 4 GB
+    :returns: Amount of Bladeburner skill points you have.
+
+    Example:
+
+    .. code-block:: javascript
+
+        bladeburner.getSkillPoints(); // returns: 1630

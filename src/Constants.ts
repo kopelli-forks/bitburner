@@ -5,14 +5,14 @@
  */
 import { IMap } from "./types";
 
-export let CONSTANTS: IMap<any> = {
-    Version:                "0.47.2",
+export const CONSTANTS: IMap<any> = {
+    Version:                "0.51.8",
 
-	/** Max level for any skill, assuming no multipliers. Determined by max numerical value in javascript for experience
+    /** Max level for any skill, assuming no multipliers. Determined by max numerical value in javascript for experience
      * and the skill level formula in Player.js. Note that all this means it that when experience hits MAX_INT, then
      * the player will have this level assuming no multipliers. Multipliers can cause skills to go above this.
      */
-	MaxSkillLevel: 			975,
+    MaxSkillLevel:          975,
 
     // Milliseconds per game cycle
     MilliPerCycle: 200,
@@ -75,14 +75,14 @@ export let CONSTANTS: IMap<any> = {
     HospitalCostPerHp: 100e3,
 
     // Intelligence-related constants
-    IntelligenceCrimeWeight: 0.05, // Weight for how much int affects crime success rates
+    IntelligenceCrimeWeight: 0.025, // Weight for how much int affects crime success rates
     IntelligenceInfiltrationWeight: 0.1, // Weight for how much int affects infiltration success rates
-    IntelligenceCrimeBaseExpGain: 0.001,
-    IntelligenceProgramBaseExpGain: 500, // Program required hack level divided by this to determine int exp gain
+    IntelligenceCrimeBaseExpGain: 0.05,
+    IntelligenceProgramBaseExpGain: 2.5, // Program required hack level divided by this to determine int exp gain
     IntelligenceTerminalHackBaseExpGain: 200, // Hacking exp divided by this to determine int exp gain
-    IntelligenceSingFnBaseExpGain: 0.002,
-    IntelligenceClassBaseExpGain: 0.000001,
-    IntelligenceHackingMissionBaseExpGain: 0.03, // Hacking Mission difficulty multiplied by this to get exp gain
+    IntelligenceSingFnBaseExpGain: 1.5,
+    IntelligenceClassBaseExpGain: 0.01,
+    IntelligenceHackingMissionBaseExpGain: 3, // Hacking Mission difficulty multiplied by this to get exp gain
 
     // Hacking Missions
     // TODO Move this into Hacking Mission implementation
@@ -218,7 +218,7 @@ export let CONSTANTS: IMap<any> = {
     CrimeHeist: "pull off the ultimate heist",
 
     // Coding Contract
-    // TODO Move this into Coding contract impelmentation?
+    // TODO: Move this into Coding contract implementation?
     CodingContractBaseFactionRepGain: 2500,
     CodingContractBaseCompanyRepGain: 4000,
     CodingContractBaseMoneyGain: 75e6,
@@ -228,35 +228,60 @@ export let CONSTANTS: IMap<any> = {
 
     LatestUpdate:
     `
-    v0.47.2
+    v0.51.8 - 2021-05-07 It was there all along (hydroflame)
     -------
 
-    Netscript Changes
-    * Added tail() Netscript function
-    * hacknet.getNodeStats() function now returns an additional property for Hacknet Servers: hashCapacity
-    * When writing to a file, the write() function now casts the data being written to a string (using String())
-    * BitNode-selection page now shows what Source-File level you have for each BitNode
-    * Overloaded kill() function so that you can kill a script by its PID
-    * spawn() now only takes 10 seconds to run (decreased from 20 seconds)
-    * run() and exec() now return the PID of the newly-executed scripts, rather than a boolean
-    ** (A PID is just a positive integer)
-    * run(), exec(), and spawn() no longer need to be await-ed in NetscriptJS
-    * Script parsing and RAM calculations now support ES9
-    * installAugmentations() no longer has a return value since it causes all scripts to die
-    * isBusy() now returns true if you are in a Hacking Mission
-    * Bug fix: workForFaction() function now properly accounts for disabled logs
-    * Bug fix: RAM should now be properly calculated when running a callback script with installAugmentations()
-    * Bug fix: Fixed bug that caused scripts killed by exit()/spawn() to "clean up" twice
+    Servers
 
-    Misc Changes
-    * The 'kill' Terminal command can now kill a script by its PID
-    * Added 'Solarized Dark' theme to CodeMirror editor
-    * After Infiltration, you will now return to the company page rather than the city page
-    * Bug fix: Stock Market UI should no longer crash for certain locale settings
-    * Bug fix: You can now properly remove unfinished programs (the *.exe-N%-INC files)
-    * Bug fix: Fixed an issue that allowed you to increase money on servers with a 'maxMoney' of 0 (like CSEC)
-    * Bug fix: Scripts no longer persist if they were started with syntax/import errors
-    * Bug fix: 'hack' and 'analyze' Terminal commands are now blocking
-    * Bug fix: Exp earned by duplicate sleeves at universities/gyms now takes hash upgrades into account
-    `
+    * Update n00dles metadata
+
+    Netscript
+
+    * 'hashGainRate' use the correct 'usedRam' and 'maxRam'
+    * Fix 'setActionAutolevel' logging.
+    * Fix 'setActionLevel' not working at all.
+    * Add 'installBackdoor' singularity function.
+
+    Hacknet
+
+    * Fix Hacknet Servers total production always displaying 0
+
+    Documentation
+
+    * Updated guide to no longer recommend BN12.
+    * Fix documentation for maxNumNodes (@ModdedGamers)
+    * Fix typo in 'sourcefiles.rst'
+    * Fix typo in 'recommendedbitnodeorder.rst'
+    * Fix 'getServer' documentation missing 'server' argument.
+    * Fix missing ram cost in 'getData.rst'
+    * Fix basic formulas examples.
+    * Fix typo in BN11 description.
+    * Fix formatting issue in Bladeburner (@Pimgd)
+
+    Misc.
+
+    * Fix negative money being displayed in full.
+    * Fix Hacking Missions not working.
+    * Fix Corporation tree not rendering.
+    * Fix script being needlessly recompiled. This should save real ram (not game ram)
+    * w0r1d_d43m0n can be backdoored
+    * Coding Contracts title is click-to-copy (@Rodeth)
+    * Covenant memory upgrade works better.
+    * Fix Neuroflux not being correctly calculated when entering BN with SF12.
+    * Delete Active Script now delete all active scripts, not just home.
+    * Now you can 'cd' in directories that only contain '.txt' files.
+    * Fix 'analyze' always saying players had root access
+    * Passive faction rep no longer builds for special factions.
+    * Donation option no longer appears for special factions.
+    * Rephrased some milestones.
+    * donation textbox now accepts money in the format '1b' and the like (@Dawe)
+    * Fix being able to join hated factions simultaneously. (@Dawe)
+    * 'ls' now displays files in multiple column. (Helps players with many files)
+    * Bladeburner multiplers now appear under Character>Stats and
+      Character>Augmentation when they are relevant.
+    * Fix missing functions syntax highlight in codemirror.
+    * Fix infiltration number formatting.
+    * script income transfers to parent on death. This helps keep track of
+      income for scripts that spawn short lived scripts.
+    `,
 }

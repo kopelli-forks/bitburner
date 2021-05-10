@@ -7,11 +7,14 @@ import * as React from "react";
 
 import { Location }         from "../Location";
 
-import { CONSTANTS }        from "../../Constants";
-import { IPlayer }          from "../../PersonObjects/IPlayer";
+import { CONSTANTS }              from "../../Constants";
+import { IPlayer }                from "../../PersonObjects/IPlayer";
+import { getServer }              from "../../Server/ServerHelpers";
+import { Server }                 from "../../Server/Server";
+import { SpecialServerIps }       from "../../Server/SpecialServerIps";
 
-import { numeralWrapper }   from "../../ui/numeralFormat";
 import { StdButton }        from "../../ui/React/StdButton";
+import { Money }            from "../../ui/React/Money";
 
 type IProps = {
     loc: Location;
@@ -22,7 +25,7 @@ export class GymLocation extends React.Component<IProps, any> {
     /**
      * Stores button styling that sets them all to block display
      */
-    btnStyle: object;
+    btnStyle: any;
 
     constructor(props: IProps) {
         super(props);
@@ -33,55 +36,64 @@ export class GymLocation extends React.Component<IProps, any> {
         this.trainDefense = this.trainDefense.bind(this);
         this.trainDexterity = this.trainDexterity.bind(this);
         this.trainAgility = this.trainAgility.bind(this);
+
+        this.calculateCost = this.calculateCost.bind(this);
     }
 
-    train(stat: string) {
+    calculateCost(): number {
+        const ip = SpecialServerIps.getIp(this.props.loc.name);
+        console.log(`ip: ${ip}`);
+        const server = getServer(ip);
+        if(server == null || !server.hasOwnProperty('backdoorInstalled')) return this.props.loc.costMult;
+        const discount = (server as Server).backdoorInstalled? 0.9 : 1;
+        return this.props.loc.costMult * discount;
+    }
+
+    train(stat: string): void {
         const loc = this.props.loc;
-        this.props.p.startClass(loc.costMult, loc.expMult, stat);
+        this.props.p.startClass(this.calculateCost(), loc.expMult, stat);
     }
 
-    trainStrength() {
-        return this.train(CONSTANTS.ClassGymStrength);
+    trainStrength(): void {
+        this.train(CONSTANTS.ClassGymStrength);
     }
 
-    trainDefense() {
-        return this.train(CONSTANTS.ClassGymDefense);
+    trainDefense(): void {
+        this.train(CONSTANTS.ClassGymDefense);
     }
 
-    trainDexterity() {
-        return this.train(CONSTANTS.ClassGymDexterity);
+    trainDexterity(): void {
+        this.train(CONSTANTS.ClassGymDexterity);
     }
 
-    trainAgility() {
-        return this.train(CONSTANTS.ClassGymAgility);
+    trainAgility(): void {
+        this.train(CONSTANTS.ClassGymAgility);
     }
 
-    render() {
-        const costMult: number = this.props.loc.costMult;
-
-        const cost = CONSTANTS.ClassGymBaseCost * costMult;
+    render(): React.ReactNode {
+        const cost = CONSTANTS.ClassGymBaseCost * this.calculateCost();
 
         return (
             <div>
                 <StdButton
                     onClick={this.trainStrength}
                     style={this.btnStyle}
-                    text={`Train Strength (${numeralWrapper.formatMoney(cost)} / sec)`}
+                    text={<>Train Strength ({Money(cost)} / sec)</>}
                 />
                 <StdButton
                     onClick={this.trainDefense}
                     style={this.btnStyle}
-                    text={`Train Defense (${numeralWrapper.formatMoney(cost)} / sec)`}
+                    text={<>Train Defense ({Money(cost)} / sec)</>}
                 />
                 <StdButton
                     onClick={this.trainDexterity}
                     style={this.btnStyle}
-                    text={`Train Dexterity (${numeralWrapper.formatMoney(cost)} / sec)`}
+                    text={<>Train Dexterity ({Money(cost)} / sec)</>}
                 />
                 <StdButton
                     onClick={this.trainAgility}
                     style={this.btnStyle}
-                    text={`Train Agility (${numeralWrapper.formatMoney(cost)} / sec)`}
+                    text={<>Train Agility ({Money(cost)} / sec)</>}
                 />
             </div>
         )

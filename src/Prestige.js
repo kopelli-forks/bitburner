@@ -1,7 +1,7 @@
 import { Augmentations } from "./Augmentation/Augmentations";
 import {
     augmentationExists,
-    initAugmentations
+    initAugmentations,
 } from "./Augmentation/AugmentationHelpers";
 import { AugmentationNames } from "./Augmentation/data/AugmentationNames";
 import { initBitNodeMultipliers } from "./BitNode/BitNode";
@@ -14,30 +14,28 @@ import { Engine } from "./engine";
 import { Faction } from "./Faction/Faction";
 import { Factions, initFactions } from "./Faction/Factions";
 import { joinFaction } from "./Faction/FactionHelpers";
-import { deleteGangDisplayContent } from "./Gang";
 import { updateHashManagerCapacity } from "./Hacknet/HacknetHelpers";
-import { Message } from "./Message/Message";
-import { initMessages, Messages } from "./Message/MessageHelpers";
+import { initMessages } from "./Message/MessageHelpers";
 import { prestigeWorkerScripts } from "./NetscriptWorker";
 import { Player } from "./Player";
+import { resetPidCounter } from "./Netscript/Pid";
+import { LiteratureNames } from "./Literature/data/LiteratureNames"
 
 import {
     AllServers,
     AddToAllServers,
     initForeignServers,
-    prestigeAllServers
+    prestigeAllServers,
 } from "./Server/AllServers";
-import { Server } from "./Server/Server";
 import { prestigeHomeComputer } from "./Server/ServerHelpers";
 import {
     SourceFileFlags,
-    updateSourceFileFlags
+    updateSourceFileFlags,
 } from "./SourceFile/SourceFileFlags";
 import {
     SpecialServerIps,
-    SpecialServerIpsMap,
     prestigeSpecialServerIps,
-    SpecialServerNames
+    SpecialServerNames,
 } from "./Server/SpecialServerIps";
 import {
     deleteStockMarket,
@@ -172,6 +170,8 @@ function prestigeAugmentation() {
             DaedalusServer.serversOnNetwork.push(WorldDaemon.ip);
         }
     }
+
+    resetPidCounter();
 }
 
 
@@ -234,6 +234,11 @@ function prestigeSourceFile() {
         }
     }
 
+    // Give levels of NeuroFluxGoverner for Source-File 12. Must be done here before Augmentations are recalculated
+    if (SourceFileFlags[12] > 0) {
+        Player.augmentations.push({name: AugmentationNames.NeuroFluxGovernor, level: SourceFileFlags[12]})
+    }
+
     // Re-initialize things - This will update any changes
     initFactions(); // Factions must be initialized before augmentations
     initAugmentations();    // Calls reapplyAllAugmentations() and resets Player multipliers
@@ -254,7 +259,7 @@ function prestigeSourceFile() {
 
     // BitNode 3: Corporatocracy
     if (Player.bitNodeN === 3) {
-        homeComp.messages.push("corporation-management-handbook.lit");
+        homeComp.messages.push(LiteratureNames.CorporationManagementHandbook);
         dialogBoxCreate("You received a copy of the Corporation Management Handbook on your home computer. " +
                         "Read it if you need help getting started with Corporations!");
     }
@@ -286,7 +291,7 @@ function prestigeSourceFile() {
             var popupId = "bladeburner-bitnode-start-nsa-notification";
             var txt = createElement("p", {
                 innerText:"Visit the National Security Agency (NSA) to apply for their Bladeburner " +
-                          "division! You will need 100 of each combat stat before doing this."
+                          "division! You will need 100 of each combat stat before doing this.",
             })
             var brEl = createElement("br");
             var okBtn = createElement("a", {
@@ -294,7 +299,7 @@ function prestigeSourceFile() {
                 clickListener:()=>{
                     removeElementById(popupId);
                     return false;
-                }
+                },
             });
             createPopup(popupId, [txt, brEl, okBtn]);
         }).catch(function(e) {
@@ -345,7 +350,9 @@ function prestigeSourceFile() {
     document.getElementById("world-menu-header").click();
 
     // Gain int exp
-    Player.gainIntelligenceExp(5);
+    Player.gainIntelligenceExp(300);
+
+    resetPidCounter();
 }
 
 export {prestigeAugmentation, prestigeSourceFile};

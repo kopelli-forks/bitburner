@@ -1,6 +1,6 @@
 import { IMap } from "../../types";
 
-export let AugmentationNames: IMap<string> = {
+export const AugmentationNames: IMap<string> = {
     Targeting1:                         "Augmented Targeting I",
     Targeting2:                         "Augmented Targeting II",
     Targeting3:                         "Augmented Targeting III",
@@ -89,6 +89,7 @@ export let AugmentationNames: IMap<string> = {
     BrachiBlades:                       "BrachiBlades",
     BionicArms:                         "Bionic Arms",
     SNA:                                "Social Negotiation Assistant (S.N.A)",
+    HydroflameLeftArm:                  "Hydroflame Left Arm",
     EsperEyewear:                       "EsperTech Bladeburner Eyewear",
     EMS4Recombination:                  "EMS-4 Recombination",
     OrionShoulder:                      "ORION-MKIV Shoulder",

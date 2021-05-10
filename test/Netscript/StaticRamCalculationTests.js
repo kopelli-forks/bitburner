@@ -54,7 +54,6 @@ describe("Netscript Static RAM Calculation/Generation Tests", function() {
         const calculated = await calculateRamUsage(code, []);
         testEquality(calculated, ScriptBaseCost);
 
-        const multipleCallsCode = code.repeat(3);
         const multipleCallsCalculated = await calculateRamUsage(code, []);
         expect(multipleCallsCalculated).to.equal(ScriptBaseCost);
     }
@@ -285,6 +284,16 @@ describe("Netscript Static RAM Calculation/Generation Tests", function() {
             await expectNonZeroRamCost(f);
         });
 
+        it("getServerMaxRam()", async function() {
+            const f = ["getServerMaxRam"];
+            await expectNonZeroRamCost(f);
+        });
+
+        it("getServerUsedRam()", async function() {
+            const f = ["getServerUsedRam"];
+            await expectNonZeroRamCost(f);
+        });
+
         it("serverExists()", async function() {
             const f = ["serverExists"];
             await expectNonZeroRamCost(f);
@@ -407,6 +416,11 @@ describe("Netscript Static RAM Calculation/Generation Tests", function() {
 
         it("getScriptExpGain()", async function() {
             const f = ["getScriptExpGain"];
+            await expectNonZeroRamCost(f);
+        });
+
+        it("getRunningScript()", async function() {
+            const f = ["getRunningScript"];
             await expectNonZeroRamCost(f);
         });
 

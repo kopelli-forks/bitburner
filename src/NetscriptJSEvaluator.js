@@ -1,21 +1,11 @@
 import { makeRuntimeRejectMsg } from "./NetscriptEvaluator";
-import { Script } from "./Script/Script";
+import { ScriptUrl } from "./Script/ScriptUrl";
 
 // Makes a blob that contains the code of a given script.
 export function makeScriptBlob(code) {
     return new Blob([code], {type: "text/javascript"});
 }
 
-class ScriptUrl {
-    /**
-     * @param {string} filename
-     * @param {string} url
-     */
-    constructor(filename, url) {
-        this.filename = filename;
-        this.url = url;
-    }
-}
 
 // Begin executing a user JS script, and return a promise that resolves
 // or rejects when the script finishes.
@@ -37,9 +27,11 @@ export async function executeJSScript(scripts = [], workerScript) {
         // but not really behaves like import. Particularly, it cannot
         // load fully dynamic content. So we hide the import from webpack
         // by placing it inside an eval call.
+        script.markUpdated();
         urls = _getScriptUrls(script, scripts, []);
+        script.url = urls[urls.length - 1].url;
         script.module = new Promise(resolve => resolve(eval('import(urls[urls.length - 1].url)')));
-        script.dependencies = urls.map(u => u.filename);
+        script.dependencies = urls;
     }
     loadedModule = await script.module;
 
@@ -57,7 +49,7 @@ export async function executeJSScript(scripts = [], workerScript) {
         if (urls != null) {
             for (const b in urls) URL.revokeObjectURL(b.url);
         }
-    };
+    }
 }
 
 /** Returns whether we should compile the script parameter.
@@ -68,13 +60,13 @@ export async function executeJSScript(scripts = [], workerScript) {
 function shouldCompile(script, scripts) {
     if (script.module === "") return true;
     return script.dependencies.some(dep => {
-        const depScript = scripts.find(s => s.filename == dep);
+        const depScript = scripts.find(s => s.filename == dep.filename);
 
         // If the script is not present on the server, we should recompile, if only to get any necessary
         // compilation errors.
         if (!depScript) return true;
 
-        const depIsMoreRecent = depScript.moduleSequenceNumber > script.moduleSequenceNumber
+        const depIsMoreRecent = depScript.moduleSequenceNumber > script.moduleSequenceNumber;
         return depIsMoreRecent;
     });
 }
@@ -115,7 +107,7 @@ export function _getScriptUrls(script, scripts, seen) {
         // import {foo} from "blob://<uuid>"
         //
         // Where the blob URL contains the script content.
-        let transformedCode = script.code.replace(/((?:from|import)\s+(?:'|"))(?:\.\/)?([^'"]+)('|";)/g,
+        let transformedCode = script.code.replace(/((?:from|import)\s+(?:'|"))(?:\.\/)?([^'"]+)('|")/g,
             (unmodified, prefix, filename, suffix) => {
                 const isAllowedImport = scripts.some(s => s.filename == filename);
                 if (!isAllowedImport) return unmodified;
@@ -129,7 +121,7 @@ export function _getScriptUrls(script, scripts, seen) {
                 // The top url in the stack is the replacement import file for this script.
                 urlStack.push(...urls);
                 return [prefix, urls[urls.length - 1].url, suffix].join('');
-            }
+            },
         );
 
         // We automatically define a print function() in the NetscriptJS module so that

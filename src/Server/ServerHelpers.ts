@@ -4,12 +4,14 @@ import {
     ipExists,
 } from "./AllServers";
 import { Server, IConstructorParams } from "./Server";
+import { calculateServerGrowth } from "./formulas/grow";
 
 import { BitNodeMultipliers } from "../BitNode/BitNodeMultipliers";
 import { CONSTANTS } from "../Constants";
 import { HacknetServer } from "../Hacknet/HacknetServer";
 import { IPlayer } from "../PersonObjects/IPlayer";
 import { Programs } from "../Programs/Programs";
+import { LiteratureNames } from "../Literature/data/LiteratureNames";
 
 import { isValidNumber } from "../utils/helpers/isValidNumber";
 import { isValidIPAddress } from "../../utils/helpers/isValidIPAddress";
@@ -44,7 +46,7 @@ export function safetlyCreateUniqueServer(params: IConstructorParams): Server {
  * @param p - Reference to Player object
  * @returns Number of "growth cycles" needed
  */
-export function numCycleForGrowth(server: Server, growth: number, p: IPlayer) {
+export function numCycleForGrowth(server: Server, growth: number, p: IPlayer): number {
     let ajdGrowthRate = 1 + (CONSTANTS.ServerBaseGrowthRate - 1) / server.hackDifficulty;
     if (ajdGrowthRate > CONSTANTS.ServerMaxGrowthRate) {
         ajdGrowthRate = CONSTANTS.ServerMaxGrowthRate;
@@ -58,23 +60,10 @@ export function numCycleForGrowth(server: Server, growth: number, p: IPlayer) {
 }
 
 //Applied server growth for a single server. Returns the percentage growth
-export function processSingleServerGrowth(server: Server, numCycles: number, p: IPlayer) {
-    //Server growth processed once every 450 game cycles
-    const numServerGrowthCycles = Math.max(Math.floor(numCycles / 450), 0);
-
-    //Get adjusted growth rate, which accounts for server security
-    const growthRate = CONSTANTS.ServerBaseGrowthRate;
-    var adjGrowthRate = 1 + (growthRate - 1) / server.hackDifficulty;
-    if (adjGrowthRate > CONSTANTS.ServerMaxGrowthRate) {adjGrowthRate = CONSTANTS.ServerMaxGrowthRate;}
-
-    //Calculate adjusted server growth rate based on parameters
-    const serverGrowthPercentage = server.serverGrowth / 100;
-    const numServerGrowthCyclesAdjusted = numServerGrowthCycles * serverGrowthPercentage * BitNodeMultipliers.ServerGrowthRate;
-
-    //Apply serverGrowth for the calculated number of growth cycles
-    let serverGrowth = Math.pow(adjGrowthRate, numServerGrowthCyclesAdjusted * p.hacking_grow_mult);
+export function processSingleServerGrowth(server: Server, threads: number, p: IPlayer): number {
+    let serverGrowth = calculateServerGrowth(server, threads, p);
     if (serverGrowth < 1) {
-        console.log("WARN: serverGrowth calculated to be less than 1");
+        console.warn("serverGrowth calculated to be less than 1");
         serverGrowth = 1;
     }
 
@@ -101,7 +90,7 @@ export function processSingleServerGrowth(server: Server, numCycles: number, p: 
     return server.moneyAvailable / oldMoneyAvailable;
 }
 
-export function prestigeHomeComputer(homeComp: Server) {
+export function prestigeHomeComputer(homeComp: Server): void {
     const hasBitflume = homeComp.programs.includes(Programs.BitFlume.name);
 
     homeComp.programs.length = 0; //Remove programs
@@ -118,13 +107,13 @@ export function prestigeHomeComputer(homeComp: Server) {
     });
 
     homeComp.messages.length = 0; //Remove .lit and .msg files
-    homeComp.messages.push("hackers-starting-handbook.lit");
+    homeComp.messages.push(LiteratureNames.HackersStartingHandbook);
 }
 
 //Returns server object with corresponding hostname
 //    Relatively slow, would rather not use this a lot
 export function GetServerByHostname(hostname: string): Server | HacknetServer | null {
-    for (var ip in AllServers) {
+    for (const ip in AllServers) {
         if (AllServers.hasOwnProperty(ip)) {
             if (AllServers[ip].hostname == hostname) {
                 return AllServers[ip];
@@ -150,11 +139,18 @@ export function getServer(s: string): Server | HacknetServer | null {
 // Returns the i-th server on the specified server's network
 // A Server's serverOnNetwork property holds only the IPs. This function returns
 // the actual Server object
-export function getServerOnNetwork(server: Server, i: number) {
+export function getServerOnNetwork(server: Server, i: number): Server | HacknetServer | null {
     if (i > server.serversOnNetwork.length) {
         console.error("Tried to get server on network that was out of range");
-        return;
+        return null;
     }
 
     return AllServers[server.serversOnNetwork[i]];
+}
+
+export function isBackdoorInstalled(server: Server | HacknetServer): boolean {
+    if ("backdoorInstalled" in server) {
+      return server.backdoorInstalled;
+    }
+    return false;
 }

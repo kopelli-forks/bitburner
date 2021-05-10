@@ -3,6 +3,8 @@ universityCourse() Netscript Function
 
 .. js:function:: universityCourse(universityName, courseName)
 
+    :RAM cost: 2 GB
+
     :param string universityName:
         Name of university. Not case-sensitive. You must be in the correct city for whatever university you specify.
 

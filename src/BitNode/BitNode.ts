@@ -16,7 +16,7 @@ class BitNode {
     number: number;
 
 
-    constructor(n: number, name: string, desc: string="", info: string="") {
+    constructor(n: number, name: string, desc="", info="") {
         this.number = n;
         this.name = name;
         this.desc = desc;
@@ -221,7 +221,7 @@ BitNodes["BitNode11"] = new BitNode(11, "The Big Crash", "Okay. Sell it all.",
                                         "The growth rate of servers is significantly reduced<br>" +
                                         "Weakening a server is twice as effective<br>" +
                                         "Company wages are decreased by 50%<br>" +
-                                        "Corporation valuations are 99% lower and are therefore significantly less profitable<br>" +
+                                        "Corporation valuations are 90% lower and are therefore significantly less profitable<br>" +
                                         "Hacknet Node production is significantly decreased<br>" +
                                         "Crime and Infiltration are more lucrative<br>" +
                                         "Augmentations are twice as expensive<br><br>" +
@@ -234,10 +234,9 @@ BitNodes["BitNode11"] = new BitNode(11, "The Big Crash", "Okay. Sell it all.",
                                         "Level 3: 56%");
 BitNodes["BitNode12"] = new BitNode(12, "The Recursion", "Repeat.",
                                         "To iterate is human, to recurse divine.<br><br>" +
-                                        "Every time this BitNode is destroyed, it becomes slightly harder. Destroying this BitNode will give your Souce-File 12, or " +
+                                        "Every time this BitNode is destroyed, it becomes slightly harder. Destroying this BitNode will give you Source-File 12, or " +
                                         "if you already have this Source-File it will upgrade its level. There is no maximum level for Source-File 12. Each level " +
-                                        "of Source-File 12 will increase all of your multipliers by 1%. This effect is multiplicative with itself. " +
-                                        "In other words, level N of this Source-File will result in a multiplier of 1.01^N (or 0.99^N for multipliers that decrease)");
+                                        "of Source-File 12 lets you start any BitNodes with NeuroFlux Governor equal to the level of this source file.");
 // Books: Frontera, Shiner
 BitNodes["BitNode13"] = new BitNode(13, "fOS", "COMING SOON"); //Unlocks the new game mode and the rest of the BitNodes
 BitNodes["BitNode14"] = new BitNode(14, "", "COMING SOON");
@@ -252,11 +251,11 @@ BitNodes["BitNode22"] = new BitNode(22, "", "COMING SOON");
 BitNodes["BitNode23"] = new BitNode(23, "", "COMING SOON");
 BitNodes["BitNode24"] = new BitNode(24, "", "COMING SOON");
 
-export function initBitNodeMultipliers(p: IPlayer) {
+export function initBitNodeMultipliers(p: IPlayer): void {
     if (p.bitNodeN == null) {
         p.bitNodeN = 1;
     }
-    for (var mult in BitNodeMultipliers) {
+    for (const mult in BitNodeMultipliers) {
         if (BitNodeMultipliers.hasOwnProperty(mult)) {
             BitNodeMultipliers[mult] = 1;
         }
@@ -274,6 +273,7 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.InfiltrationMoney        = 3;
             BitNodeMultipliers.FactionWorkRepGain       = 0.5;
             BitNodeMultipliers.FactionPassiveRepGain    = 0;
+            BitNodeMultipliers.GangKarmaRequirement     = 0;
             break;
         case 3: // Corporatocracy
             BitNodeMultipliers.HackingLevelMultiplier   = 0.8;
@@ -289,6 +289,7 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.HacknetNodeMoney         = 0.25;
             BitNodeMultipliers.HomeComputerRamCost      = 1.5;
             BitNodeMultipliers.PurchasedServerCost      = 2;
+            BitNodeMultipliers.GangKarmaRequirement     = 3;
             break;
         case 4: // The Singularity
             BitNodeMultipliers.ServerMaxMoney           = 0.15;
@@ -331,6 +332,7 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.FactionPassiveRepGain    = 0;
             BitNodeMultipliers.HackExpGain              = 0.25;
             BitNodeMultipliers.DaedalusAugsRequirement  = 1.166; // Results in 35 Augs needed
+            BitNodeMultipliers.GangKarmaRequirement     = 5;
             break;
         case 7: // Bladeburner 2079
             BitNodeMultipliers.BladeburnerRank              = 0.6;
@@ -351,9 +353,11 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.FourSigmaMarketDataCost      = 2;
             BitNodeMultipliers.FourSigmaMarketDataApiCost   = 2;
             BitNodeMultipliers.DaedalusAugsRequirement      = 1.166; // Results in 35 Augs needed
+            BitNodeMultipliers.GangKarmaRequirement         = 5;
             break;
         case 8: // Ghost of Wall Street
-            BitNodeMultipliers.ScriptHackMoney          = 0;
+            BitNodeMultipliers.ScriptHackMoney          = 0.3;
+            BitNodeMultipliers.ScriptHackMoneyGain      = 0;
             BitNodeMultipliers.ManualHackMoney          = 0;
             BitNodeMultipliers.CompanyWorkMoney         = 0;
             BitNodeMultipliers.CrimeMoney               = 0;
@@ -362,6 +366,7 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.RepToDonateToFaction     = 0;
             BitNodeMultipliers.CorporationValuation     = 0;
             BitNodeMultipliers.CodingContractMoney      = 0;
+            BitNodeMultipliers.GangKarmaRequirement    = 10;
             break;
         case 9: // Hacktocracy
             BitNodeMultipliers.HackingLevelMultiplier       = 0.4;
@@ -383,6 +388,7 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.FourSigmaMarketDataApiCost   = 4;
             BitNodeMultipliers.BladeburnerRank              = 0.9;
             BitNodeMultipliers.BladeburnerSkillCost         = 1.2;
+            BitNodeMultipliers.GangKarmaRequirement         = 3;
             break;
         case 10: // Digital Carbon
             BitNodeMultipliers.HackingLevelMultiplier   = 0.2;
@@ -406,6 +412,7 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.PurchasedServerLimit     = 0.6;
             BitNodeMultipliers.PurchasedServerMaxRam    = 0.5;
             BitNodeMultipliers.BladeburnerRank          = 0.8;
+            BitNodeMultipliers.GangKarmaRequirement     = 3;
             break;
         case 11: //The Big Crash
             BitNodeMultipliers.HackingLevelMultiplier       = 0.5;
@@ -425,15 +432,15 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.FourSigmaMarketDataCost      = 4;
             BitNodeMultipliers.FourSigmaMarketDataApiCost   = 4;
             break;
-        case 12: //The Recursion
-            var sf12Lvl = 0;
-            for (var i = 0; i < p.sourceFiles.length; i++) {
+        case 12: { //The Recursion
+            let sf12Lvl = 0;
+            for (let i = 0; i < p.sourceFiles.length; i++) {
                 if (p.sourceFiles[i].n === 12) {
                     sf12Lvl = p.sourceFiles[i].lvl;
                 }
             }
-            var inc = Math.pow(1.02, sf12Lvl);
-            var dec = 1/inc;
+            const inc = Math.pow(1.02, sf12Lvl);
+            const dec = 1/inc;
 
             // Multiplier for number of augs needed for Daedalus increases
             // up to a maximum of 1.34, which results in 40 Augs required
@@ -460,11 +467,12 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.PurchasedServerLimit     = dec;
             BitNodeMultipliers.PurchasedServerMaxRam    = dec;
 
-            BitNodeMultipliers.ManualHackMoney  = dec;
-            BitNodeMultipliers.ScriptHackMoney  = dec;
-            BitNodeMultipliers.CompanyWorkMoney = dec;
-            BitNodeMultipliers.CrimeMoney       = dec;
-            BitNodeMultipliers.HacknetNodeMoney = dec;
+            BitNodeMultipliers.ManualHackMoney     = dec;
+            BitNodeMultipliers.ScriptHackMoney     = dec;
+            BitNodeMultipliers.CompanyWorkMoney    = dec;
+            BitNodeMultipliers.CrimeMoney          = dec;
+            BitNodeMultipliers.HacknetNodeMoney    = dec;
+            BitNodeMultipliers.CodingContractMoney = dec;
 
             BitNodeMultipliers.CompanyWorkExpGain = dec;
             BitNodeMultipliers.ClassGymExpGain    = dec;
@@ -490,8 +498,9 @@ export function initBitNodeMultipliers(p: IPlayer) {
             BitNodeMultipliers.BladeburnerRank      = dec;
             BitNodeMultipliers.BladeburnerSkillCost = inc;
             break;
+        }
         default:
-            console.log("WARNING: Player.bitNodeN invalid");
+            console.warn("Player.bitNodeN invalid");
             break;
     }
 }

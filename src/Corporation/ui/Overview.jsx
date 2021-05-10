@@ -10,6 +10,7 @@ import { CorporationUpgrades }          from "../data/CorporationUpgrades";
 
 import { CONSTANTS } from "../../Constants";
 import { numeralWrapper } from "../../ui/numeralFormat";
+import { convertTimeMsToTimeElapsedString } from "../../../utils/StringHelperFunctions";
 
 export class Overview extends BaseReactComponent {
     // Generic Function for Creating a button
@@ -59,7 +60,7 @@ export class Overview extends BaseReactComponent {
 
         let txt = "Total Funds: " + numeralWrapper.format(this.corp().funds.toNumber(), '$0.000a') + "<br>" +
                   "Total Revenue: " + numeralWrapper.format(this.corp().revenue.toNumber(), "$0.000a") + " / s<br>" +
-                  "Total Expenses: " + numeralWrapper.format(this.corp().expenses.toNumber(), "$0.000a") + "/ s<br>" +
+                  "Total Expenses: " + numeralWrapper.format(this.corp().expenses.toNumber(), "$0.000a") + " / s<br>" +
                   "Total Profits: " + profitStr + " / s<br>" +
                   dividendStr +
                   "Publicly Traded: " + (this.corp().public ? "Yes" : "No") + "<br>" +
@@ -71,9 +72,9 @@ export class Overview extends BaseReactComponent {
                       `Private Shares: ${numeralWrapper.format(this.corp().totalShares - this.corp().issuedShares - this.corp().numShares, "0.000a")}` +
                   "</span></p><br><br>";
 
-        const storedTime = this.corp().storedCycles * CONSTANTS.MilliPerCycle / 1000;
-        if (storedTime > 15) {
-            txt += `Bonus Time: ${storedTime} seconds<br><br>`;
+        const storedTime = this.corp().storedCycles * CONSTANTS.MilliPerCycle;
+        if (storedTime > 15000) {
+            txt += `Bonus time: ${convertTimeMsToTimeElapsedString(storedTime)}<br><br>`;
         }
 
         let prodMult        = this.corp().getProductionMultiplier(),
@@ -157,7 +158,7 @@ export class Overview extends BaseReactComponent {
             onClick: findInvestorsOnClick,
             style: "inline-block",
             text: "Find Investors",
-            tooltip: findInvestorsTooltip
+            tooltip: findInvestorsTooltip,
         });
         const goPublicBtn = this.createButton({
             class: "std-button",
@@ -166,7 +167,7 @@ export class Overview extends BaseReactComponent {
             text: "Go Public",
             tooltip: "Become a publicly traded and owned entity. Going public " +
                      "involves issuing shares for an IPO. Once you are a public " +
-                     "company, your shares will be traded on the stock market."
+                     "company, your shares will be traded on the stock market.",
         });
 
         return (

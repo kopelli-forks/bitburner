@@ -12,10 +12,9 @@ import { BaseCostPerSleeve,
          PopupId }                      from "../SleeveCovenantPurchases";
 import { IPlayer }                      from "../../IPlayer";
 
-import { numeralWrapper }               from "../../../ui/numeralFormat";
-
 import { PopupCloseButton }             from "../../../ui/React/PopupCloseButton";
 import { StdButton }                    from "../../../ui/React/StdButton";
+import { Money }                        from "../../../ui/React/Money";
 
 import { dialogBoxCreate }              from "../../../../utils/DialogBox";
 
@@ -50,13 +49,13 @@ export class CovenantPurchasesRoot extends React.Component<IProps, IState> {
     /**
      * Force a rerender by just changing an arbitrary state value
      */
-    rerender() {
+    rerender(): void {
         this.setState((state: IState) => ({
             update: state.update + 1,
         }));
     }
 
-    render() {
+    render(): React.ReactNode {
         // Purchasing a new Duplicate Sleeve
         let purchaseDisabled = false;
         if (!this.props.p.canAfford(this.purchaseCost())) {
@@ -65,7 +64,7 @@ export class CovenantPurchasesRoot extends React.Component<IProps, IState> {
         if (this.props.p.sleevesFromCovenant >= MaxSleevesFromCovenant) {
             purchaseDisabled = true;
         }
-        const purchaseOnClick = () => {
+        const purchaseOnClick = (): void => {
             if (this.props.p.sleevesFromCovenant >= MaxSleevesFromCovenant) { return; }
             
             if (this.props.p.canAfford(this.purchaseCost())) {
@@ -83,7 +82,7 @@ export class CovenantPurchasesRoot extends React.Component<IProps, IState> {
         for (let i = 0; i < this.props.p.sleeves.length; ++i) {
             const sleeve = this.props.p.sleeves[i];
             upgradePanels.push(
-                <CovenantSleeveUpgrades {...this.props} sleeve={sleeve} index={i} rerender={this.rerender} key={i} />
+                <CovenantSleeveUpgrades {...this.props} sleeve={sleeve} index={i} rerender={this.rerender} key={i} />,
             )
         }
 
@@ -92,7 +91,7 @@ export class CovenantPurchasesRoot extends React.Component<IProps, IState> {
                 <PopupCloseButton popup={PopupId} text={"Close"} />
                 <p>
                     Would you like to purchase an additional Duplicate Sleeve from The Covenant
-                    for {numeralWrapper.formatMoney(this.purchaseCost())}?
+                    for {Money(this.purchaseCost())}?
                 </p>
                 <br />
                 <p>

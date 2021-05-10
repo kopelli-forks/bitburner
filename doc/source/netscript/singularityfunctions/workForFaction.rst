@@ -3,6 +3,8 @@ workForFaction() Netscript Function
 
 .. js:function:: workForFaction(factionName, workType)
 
+    :RAM cost: 3 GB
+
     :param string factionName: Name of faction to work for. CASE-SENSITIVE
     :param string workType:
         Type of work to perform for the faction:

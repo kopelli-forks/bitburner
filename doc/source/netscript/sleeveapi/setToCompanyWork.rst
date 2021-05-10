@@ -3,6 +3,8 @@ setToCompanyWork() Netscript Function
 
 .. js:function:: setToCompanyWork(sleeveNumber, companyName)
 
+    :RAM cost: 4 GB
+
     :param int sleeveNumber: Index of the sleeve to work for the company. See :ref:`here <netscript_sleeveapi_referencingaduplicatesleeve>`
     :param string companyName: Name of the company to work for.
 

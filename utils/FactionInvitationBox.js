@@ -20,11 +20,6 @@ function factionInvitationSetText(txt) {
     textBox.innerHTML = txt;
 }
 
-function factionInvitationSetMessage(msg) {
-    var msgBox = document.getElementById("faction-invitation-box-message");
-    msgBox.innerHTML = msg;
-}
-
 //ram argument is in GB
 function factionInvitationBoxCreate(faction) {
     factionInvitationSetText("You have received a faction invitation from " + faction.name);
@@ -41,8 +36,6 @@ function factionInvitationBoxCreate(faction) {
         var i = Player.factionInvitations.findIndex((facName)=>{return facName === faction.name});
         if (i === -1) {
             console.error("Could not find faction in Player.factionInvitations");
-        } else {
-            Player.factionInvitations.splice(i, 1);
         }
         joinFaction(faction);
         factionInvitationBoxClose();

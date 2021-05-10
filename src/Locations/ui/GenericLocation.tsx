@@ -6,23 +6,29 @@
  */
 import * as React from "react";
 
-import { CompanyLocation }          from "./CompanyLocation";
-import { GymLocation }              from "./GymLocation";
-import { HospitalLocation }         from "./HospitalLocation";
-import { SlumsLocation }            from "./SlumsLocation";
-import { SpecialLocation }          from "./SpecialLocation";
-import { TechVendorLocation }       from "./TechVendorLocation";
-import { TravelAgencyLocation }     from "./TravelAgencyLocation";
-import { UniversityLocation }       from "./UniversityLocation";
+import { CompanyLocation }                  from "./CompanyLocation";
+import { GymLocation }                      from "./GymLocation";
+import { HospitalLocation }                 from "./HospitalLocation";
+import { SlumsLocation }                    from "./SlumsLocation";
+import { SpecialLocation }                  from "./SpecialLocation";
+import { TechVendorLocation }               from "./TechVendorLocation";
+import { TravelAgencyLocation }             from "./TravelAgencyLocation";
+import { UniversityLocation }               from "./UniversityLocation";
+import { CasinoLocation }                   from "./CasinoLocation";
 
-import { Location }                 from "../Location";
-import { LocationType }             from "../LocationTypeEnum";
-import { CityName }                 from "../data/CityNames";
+import { Location }                         from "../Location";
+import { LocationType }                     from "../LocationTypeEnum";
+import { CityName }                         from "../data/CityNames";
 
-import { IEngine }                  from "../../IEngine";
-import { IPlayer }                  from "../../PersonObjects/IPlayer";
+import { IEngine }                          from "../../IEngine";
+import { IPlayer }                          from "../../PersonObjects/IPlayer";
+import { Settings }                         from "../../Settings/Settings";
 
-import { StdButton }                from "../../ui/React/StdButton";
+import { SpecialServerIps }                 from "../../Server/SpecialServerIps";
+import { getServer, isBackdoorInstalled }   from "../../Server/ServerHelpers";
+
+import { StdButton }                        from "../../ui/React/StdButton";
+import { CorruptableText }                  from "../../ui/React/CorruptableText";
 
 type IProps = {
     engine: IEngine;
@@ -36,7 +42,7 @@ export class GenericLocation extends React.Component<IProps, any> {
     /**
      * Stores button styling that sets them all to block display
      */
-    btnStyle: object;
+    btnStyle: any;
 
     constructor(props: IProps) {
         super(props);
@@ -58,7 +64,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                     key={"companylocation"}
                     locName={this.props.loc.name}
                     p={this.props.p}
-                />
+                />,
             )
         }
 
@@ -68,7 +74,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                     key={"gymlocation"}
                     loc={this.props.loc}
                     p={this.props.p}
-                />
+                />,
             )
         }
 
@@ -77,7 +83,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                 <HospitalLocation
                     key={"hospitallocation"}
                     p={this.props.p}
-                />
+                />,
             )
         }
 
@@ -86,7 +92,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                 <SlumsLocation
                     key={"slumslocation"}
                     p={this.props.p}
-                />
+                />,
             )
         }
 
@@ -97,7 +103,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                     key={"speciallocation"}
                     loc={this.props.loc}
                     p={this.props.p}
-                />
+                />,
             )
         }
 
@@ -107,7 +113,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                     key={"techvendorlocation"}
                     loc={this.props.loc}
                     p={this.props.p}
-                />
+                />,
             )
         }
 
@@ -117,7 +123,7 @@ export class GenericLocation extends React.Component<IProps, any> {
                     key={"travelagencylocation"}
                     p={this.props.p}
                     travel={this.props.travel}
-                />
+                />,
             )
         }
 
@@ -127,20 +133,37 @@ export class GenericLocation extends React.Component<IProps, any> {
                     key={"universitylocation"}
                     loc={this.props.loc}
                     p={this.props.p}
-                />
+                />,
+            )
+        }
+
+        if (this.props.loc.types.includes(LocationType.Casino)) {
+            content.push(
+                <CasinoLocation
+                    key={"casinoLocation"}
+                    p={this.props.p}
+                />,
             )
         }
 
         return content;
     }
 
-    render() {
+    render(): React.ReactNode {
         const locContent: React.ReactNode[] = this.getLocationSpecificContent();
-
+        const ip = SpecialServerIps.getIp(this.props.loc.name);
+        const server = getServer(ip);
+        const backdoorInstalled = server !== null && isBackdoorInstalled(server);
+        
         return (
             <div>
                 <StdButton onClick={this.props.returnToCity} style={this.btnStyle} text={"Return to World"} />
-                <h1>{this.props.loc.name}</h1>
+                <h1>
+                    {backdoorInstalled && !Settings.DisableTextEffects
+                        ? <CorruptableText content={this.props.loc.name}/>
+                        : this.props.loc.name
+                    }
+                </h1>
                 {locContent}
             </div>
         )

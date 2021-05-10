@@ -3,8 +3,7 @@ getGangInformation() Netscript Function
 
 .. js:function:: getGangInformation()
 
-    Get general information about the gang
-
+    :RAM cost: 2 GB
     :returns: An object with the gang information.
 
     The object has the following structure::
@@ -21,3 +20,5 @@ getGangInformation() Netscript Function
             wantedLevel:            Gang's wanted level
             wantedLevelGainRate:    Wanted level gained/lost per second (negative for losses)
         }
+
+    Get general information about the gang

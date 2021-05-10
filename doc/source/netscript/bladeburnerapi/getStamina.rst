@@ -3,13 +3,12 @@ getStamina() Netscript Function
 
 .. js:function:: getStamina()
 
-    Returns an array with two elements:
+    :RAM cost: 4 GB
+    :returns: Array with two elements [Current stamina, Max stamina]
 
-        [Current stamina, Max stamina]
+    Example:
 
-    Example usage::
+    .. code-block:: javascript
 
-        function getStaminaPercentage() {
-            let res = bladeburner.getStamina();
-            return res[0] / res[1];
-        }
+            res = bladeburner.getStamina();
+            percentage = res[0] / res[1];

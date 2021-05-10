@@ -26,23 +26,32 @@ In :ref:`netscriptjs`::
     ns.hacknet.getNodeStats(3).level;
 
 .. toctree::
-    :caption: API Functions:
+    :caption: Hacknet Nodes API Functions:
 
     numNodes() <hacknetnodeapi/numNodes>
+    maxNumNodes() <hacknetnodeapi/maxNumNodes>
     purchaseNode() <hacknetnodeapi/purchaseNode>
     getPurchaseNodeCost() <hacknetnodeapi/getPurchaseNodeCost>
     getNodeStats() <hacknetnodeapi/getNodeStats>
     upgradeLevel() <hacknetnodeapi/upgradeLevel>
     upgradeRam() <hacknetnodeapi/upgradeRam>
     upgradeCore() <hacknetnodeapi/upgradeCore>
-    upgradeCache() <hacknetnodeapi/upgradeCache>
     getLevelUpgradeCost() <hacknetnodeapi/getLevelUpgradeCost>
     getRamUpgradeCost() <hacknetnodeapi/getRamUpgradeCost>
     getCoreUpgradeCost() <hacknetnodeapi/getCoreUpgradeCost>
+
+.. toctree::
+    :caption: Hacknet Servers API Functions:
+
+    upgradeCache() <hacknetnodeapi/upgradeCache>
     getCacheUpgradeCost() <hacknetnodeapi/getCacheUpgradeCost>
     numHashes() <hacknetnodeapi/numHashes>
+    hashCapacity() <hacknetnodeapi/hashCapacity>
     hashCost() <hacknetnodeapi/hashCost>
     spendHashes() <hacknetnodeapi/spendHashes>
+    getHashUpgradeLevel() <hacknetnodeapi/getHashUpgradeLevel>
+    getTrainingMult() <hacknetnodeapi/getTrainingMult>
+    getStudyMult() <hacknetnodeapi/getStudyMult>
 
 .. _netscript_hacknetnodeapi_referencingahacknetnode:
 
@@ -77,7 +86,7 @@ The following is an example of one way a script can be used to automate the
 purchasing and upgrading of Hacknet Nodes.
 
 This script attempts to purchase Hacknet Nodes until the player has a total of 8. Then
-it gradually upgrades those Node's to a minimum of level 140, 64 GB RAM, and 8 cores
+it gradually upgrades those Node's to a minimum of level 80, 16 GB RAM, and 8 cores
 
 .. code:: javascript
 
@@ -120,3 +129,16 @@ it gradually upgrades those Node's to a minimum of level 140, 64 GB RAM, and 8 c
     };
 
     print("All nodes upgraded to 16GB RAM");
+
+    for (var i = 0; i < cnt; i++) {
+        while (hacknet.getNodeStats(i).cores < 8) {
+            var cost = hacknet.getCoreUpgradeCost(i, 1);
+            while (myMoney() < cost) {
+                print("Need $" + cost + " . Have $" + myMoney());
+                sleep(3000);
+            }
+            res = hacknet.upgradeCore(i, 1);
+        };
+    };
+
+    print("All nodes upgraded to 8 cores");

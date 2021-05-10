@@ -9,9 +9,12 @@ import { Location }         from "../Location";
 
 import { CONSTANTS }        from "../../Constants";
 import { IPlayer }          from "../../PersonObjects/IPlayer";
+import { getServer }              from "../../Server/ServerHelpers";
+import { Server }                 from "../../Server/Server";
+import { SpecialServerIps }       from "../../Server/SpecialServerIps";
 
-import { numeralWrapper }   from "../../ui/numeralFormat";
 import { StdButton }        from "../../ui/React/StdButton";
+import { Money }            from "../../ui/React/Money";
 
 type IProps = {
     loc: Location;
@@ -22,7 +25,7 @@ export class UniversityLocation extends React.Component<IProps, any> {
     /**
      * Stores button styling that sets them all to block display
      */
-    btnStyle: object;
+    btnStyle: any;
 
     constructor(props: IProps) {
         super(props);
@@ -36,39 +39,50 @@ export class UniversityLocation extends React.Component<IProps, any> {
         this.algorithms = this.algorithms.bind(this);
         this.management = this.management.bind(this);
         this.leadership = this.leadership.bind(this);
+
+        this.calculateCost = this.calculateCost.bind(this);
     }
 
-    take(stat: string) {
+    calculateCost(): number {
+        const ip = SpecialServerIps.getIp(this.props.loc.name);
+        console.log(`ip: ${ip}`);
+        const server = getServer(ip);
+        if(server == null || !server.hasOwnProperty('backdoorInstalled')) return this.props.loc.costMult;
+        const discount = (server as Server).backdoorInstalled? 0.9 : 1;
+        return this.props.loc.costMult * discount;
+    }
+
+    take(stat: string): void {
         const loc = this.props.loc;
-        this.props.p.startClass(loc.costMult, loc.expMult, stat);
+        this.props.p.startClass(this.calculateCost(), loc.expMult, stat);
     }
 
-    study() {
-        return this.take(CONSTANTS.ClassStudyComputerScience);
+    study(): void {
+        this.take(CONSTANTS.ClassStudyComputerScience);
     }
 
-    dataStructures() {
-        return this.take(CONSTANTS.ClassDataStructures);
+    dataStructures(): void {
+        this.take(CONSTANTS.ClassDataStructures);
     }
 
-    networks() {
-        return this.take(CONSTANTS.ClassNetworks);
+    networks(): void {
+        this.take(CONSTANTS.ClassNetworks);
     }
 
-    algorithms() {
-        return this.take(CONSTANTS.ClassAlgorithms);
+    algorithms(): void {
+        this.take(CONSTANTS.ClassAlgorithms);
     }
 
-    management() {
-        return this.take(CONSTANTS.ClassManagement);
+    management(): void {
+        this.take(CONSTANTS.ClassManagement);
     }
 
-    leadership() {
-        return this.take(CONSTANTS.ClassLeadership);
+    leadership(): void {
+        this.take(CONSTANTS.ClassLeadership);
     }
 
-    render() {
-        const costMult: number = this.props.loc.costMult;
+    render(): React.ReactNode {
+        const costMult: number = this.calculateCost();
 
         const dataStructuresCost = CONSTANTS.ClassDataStructuresBaseCost * costMult;
         const networksCost = CONSTANTS.ClassNetworksBaseCost * costMult;
@@ -90,31 +104,31 @@ export class UniversityLocation extends React.Component<IProps, any> {
                 <StdButton
                     onClick={this.dataStructures}
                     style={this.btnStyle}
-                    text={`Take Data Structures course (${numeralWrapper.formatMoney(dataStructuresCost)} / sec)`}
+                    text={<>Take Data Structures course ({Money(dataStructuresCost)} / sec)</>}
                     tooltip={earnHackingExpTooltip}
                 />
                 <StdButton
                     onClick={this.networks}
                     style={this.btnStyle}
-                    text={`Take Networks course (${numeralWrapper.formatMoney(networksCost)} / sec)`}
+                    text={<>Take Networks course ({Money(networksCost)} / sec)</>}
                     tooltip={earnHackingExpTooltip}
                 />
                 <StdButton
                     onClick={this.algorithms}
                     style={this.btnStyle}
-                    text={`Take Algorithms course (${numeralWrapper.formatMoney(algorithmsCost)} / sec)`}
+                    text={<>Take Algorithms course ({Money(algorithmsCost)} / sec)</>}
                     tooltip={earnHackingExpTooltip}
                 />
                 <StdButton
                     onClick={this.management}
                     style={this.btnStyle}
-                    text={`Take Management course (${numeralWrapper.formatMoney(managementCost)} / sec)`}
+                    text={<>Take Management course ({Money(managementCost)} / sec)</>}
                     tooltip={earnCharismaExpTooltip}
                 />
                 <StdButton
                     onClick={this.leadership}
                     style={this.btnStyle}
-                    text={`Take Leadership course (${numeralWrapper.formatMoney(leadershipCost)} / sec)`}
+                    text={<>Take Leadership course ({Money(leadershipCost)} / sec)</>}
                     tooltip={earnCharismaExpTooltip}
                 />
             </div>

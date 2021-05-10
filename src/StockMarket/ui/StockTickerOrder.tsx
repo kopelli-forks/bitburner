@@ -7,9 +7,10 @@ import { Order } from "../Order";
 import { PositionTypes } from "../data/PositionTypes";
 
 import { numeralWrapper } from "../../ui/numeralFormat";
+import { Money } from "../../ui/React/Money";
 
 type IProps = {
-    cancelOrder: (params: object) => void;
+    cancelOrder: (params: any) => void;
     order: Order;
 }
 
@@ -20,15 +21,15 @@ export class StockTickerOrder extends React.Component<IProps, any> {
         this.handleCancelOrderClick = this.handleCancelOrderClick.bind(this);
     }
 
-    handleCancelOrderClick() {
+    handleCancelOrderClick(): void {
         this.props.cancelOrder({ order: this.props.order });
     }
 
-    render() {
+    render(): React.ReactNode {
         const order = this.props.order;
 
         const posTxt = order.pos === PositionTypes.Long ? "Long Position" : "Short Position";
-        const txt = `${order.type} - ${posTxt} - ${numeralWrapper.formatBigNumber(order.shares)} @ ${numeralWrapper.formatMoney(order.price)}`
+        const txt = <>{order.type} - {posTxt} - {numeralWrapper.formatShares(order.shares)} @ {Money(order.price)}</>
 
         return (
             <li>

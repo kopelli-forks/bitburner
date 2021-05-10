@@ -98,8 +98,6 @@ import { Settings } from "../Settings/Settings";
 import { clearEventListeners } from "../../utils/uiHelpers/clearEventListeners";
 import { createElement } from "../../utils/uiHelpers/createElement";
 import { createOptionElement } from "../../utils/uiHelpers/createOptionElement";
-import { getSelectText,
-         getSelectValue } from "../../utils/uiHelpers/getSelectData";
 import { removeChildrenFromElement } from "../../utils/uiHelpers/removeChildrenFromElement";
 
 // Max number of invisibles to be shown in a group if the "Show Invisibles" option
@@ -180,7 +178,7 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
                 netscriptFns.push(name);
 
                 //Get functions from namespaces
-                const namespaces = ["bladeburner", "hacknet", "codingcontract", "gang", "sleeve"];
+                const namespaces = ["bladeburner", "hacknet", "codingcontract", "gang", "sleeve", "heart", "formulas"];
                 if (namespaces.includes(name)) {
                     let namespace = fnsObj[name];
                     if (typeof namespace !== "object") {continue;}
@@ -209,7 +207,7 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
                     return item.match(regex);
                 })).sort(),
                 from: CodeMirror.Pos(cursor.line, start),
-                to: CodeMirror.Pos(cursor.line, end)
+                to: CodeMirror.Pos(cursor.line, end),
             };
 
             return result;
@@ -217,16 +215,16 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
 
         // Configure VIM keybindings
         var VimApi = CodeMirror.Vim;
-        VimApi.defineEx('write', 'w', function(cm, input) {
+        VimApi.defineEx('write', 'w', function() {
             params.saveAndCloseFn();
         });
-        VimApi.defineEx('quit', 'q', function(cm, input) {
+        VimApi.defineEx('quit', 'q', function() {
             params.quitFn();
         });
-        VimApi.defineEx('xwritequit', 'x', function(cm, input) {
+        VimApi.defineEx('xwritequit', 'x', function() {
             params.saveAndCloseFn();
         });
-        VimApi.defineEx('wqwritequit', 'wq', function(cm, input) {
+        VimApi.defineEx('wqwritequit', 'wq', function() {
             params.saveAndCloseFn();
         });
     }
@@ -355,7 +353,7 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
                     keys = keys + key;
                     this.vimCommandDisplay.innerHTML = keys;
                 }
-                const handleVimCommandDone = (e) => {
+                const handleVimCommandDone = () => {
                     keys = '';
                     this.vimCommandDisplay.innerHTML = keys;
                 }
@@ -387,7 +385,7 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
             showInvisiblesChkBox.onchange = () => {
                 const overlayMode = {
                     name: 'invisibles',
-                    token:  function nextToken(stream) {
+                    token:  function(stream) {
                         var ret,
                             spaces  = 0,
                             space   = stream.peek() === ' ';
@@ -412,7 +410,7 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
                         }
 
                         return ret;
-                    }
+                    },
                 };
 
                 if (showInvisiblesChkBox.checked) {
@@ -452,7 +450,7 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
                         },
                         "Shift-Tab": function (cm) {
                             cm.indentSelection("subtract");
-                        }
+                        },
                     });
                 } else {
                     this.editor.removeKeyMap("soft-tabs-keymap");
@@ -569,6 +567,15 @@ class CodeMirrorEditorWrapper extends ScriptEditor {
         if (elem instanceof HTMLElement) {
             elem.style.display = "none";
         }
+    }
+
+    getCursor() {
+        const c = this.editor.getCursor();  //I need to get the cursor position
+        return {row: c.line, column: c.ch};
+    }
+
+    setCursor(pos) {
+        this.editor.setCursor({line: pos.row, ch: pos.column});
     }
 }
 

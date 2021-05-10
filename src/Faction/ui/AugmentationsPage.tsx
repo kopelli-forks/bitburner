@@ -6,6 +6,7 @@ import * as React from "react";
 import { PurchaseableAugmentation } from "./PurchaseableAugmentation";
 
 import { Augmentations } from "../../Augmentation/Augmentations";
+import { AugmentationNames } from "../../Augmentation/data/AugmentationNames";
 import { Faction } from "../../Faction/Faction";
 import { IPlayer } from "../../PersonObjects/IPlayer";
 import { PurchaseAugmentationsOrderSetting } from "../../Settings/SettingEnums";
@@ -44,7 +45,7 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
         this.rerender = this.rerender.bind(this);
     }
 
-    getAugs() {
+    getAugs(): string[] {
         if (this.isPlayersGang) {
             const augs: string[] = [];
             for (const augName in Augmentations) {
@@ -60,7 +61,7 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
         }
     }
 
-    getAugsSorted() {
+    getAugsSorted(): string[] {
         switch (Settings.PurchaseAugmentationsOrder) {
             case PurchaseAugmentationsOrderSetting.Cost: {
                 return this.getAugsSortedByCost();
@@ -73,10 +74,10 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
         }
     }
 
-    getAugsSortedByCost() {
+    getAugsSortedByCost(): string[] {
         const augs = this.getAugs();
         augs.sort((augName1, augName2)=>{
-            var aug1 = Augmentations[augName1], aug2 = Augmentations[augName2];
+            const aug1 = Augmentations[augName1], aug2 = Augmentations[augName2];
             if (aug1 == null || aug2 == null) {
                 throw new Error("Invalid Augmentation Names");
             }
@@ -87,10 +88,10 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
         return augs;
     }
 
-    getAugsSortedByReputation() {
+    getAugsSortedByReputation(): string[] {
         const augs = this.getAugs();
         augs.sort((augName1, augName2)=>{
-            var aug1 = Augmentations[augName1], aug2 = Augmentations[augName2];
+            const aug1 = Augmentations[augName1], aug2 = Augmentations[augName2];
             if (aug1 == null || aug2 == null) {
                 throw new Error("Invalid Augmentation Names");
             }
@@ -100,16 +101,16 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
         return augs;
     }
 
-    getAugsSortedByDefault() {
+    getAugsSortedByDefault(): string[] {
         return this.getAugs();
     }
 
-    switchSortOrder(newOrder: PurchaseAugmentationsOrderSetting) {
+    switchSortOrder(newOrder: PurchaseAugmentationsOrderSetting): void {
         Settings.PurchaseAugmentationsOrder = newOrder;
         this.rerender();
     }
 
-    rerender() {
+    rerender(): void {
         this.setState((prevState) => {
             return {
                 rerenderFlag: !prevState.rerenderFlag,
@@ -117,9 +118,14 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
         });
     }
 
-    render() {
+    render(): React.ReactNode {
         const augs = this.getAugsSorted();
-        const augList = augs.map((aug) => {
+        const purchasable = augs.filter((aug: string) => aug === AugmentationNames.NeuroFluxGovernor ||
+            (!this.props.p.augmentations.some(a => a.name === aug) && 
+            !this.props.p.queuedAugmentations.some(a => a.name === aug)),
+        )
+
+        const purchaseableAugmentation = (aug: string): React.ReactNode => {
             return (
                 <PurchaseableAugmentation
                     augName={aug}
@@ -129,7 +135,22 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
                     rerender={this.rerender}
                 />
             )
-        });
+        }
+
+        const augListElems = purchasable.map(aug => purchaseableAugmentation(aug));
+
+        let ownedElem = <></>
+        const owned = augs.filter((aug: string) => !purchasable.includes(aug));
+        if (owned.length !== 0) {
+            ownedElem = <>
+                <br />
+                <h2>Purchased Augmentations</h2>
+                <p style={infoStyleMarkup}>
+                    This factions also offers these augmentations but you already own them.
+                </p>
+                {owned.map(aug => purchaseableAugmentation(aug))}
+            </>
+        }
 
         return (
             <div>
@@ -156,7 +177,8 @@ export class AugmentationsPage extends React.Component<IProps, IState> {
                     text={"Sort by Default Order"}
                 />
                 <br />
-                {augList}
+                {augListElems}
+                {ownedElem}
             </div>
         )
     }

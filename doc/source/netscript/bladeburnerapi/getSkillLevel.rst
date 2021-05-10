@@ -1,10 +1,14 @@
 getSkillLevel() Netscript Function
 ==================================
 
-.. js:function:: getSkillLevel(skillName="")
+.. js:function:: getSkillLevel(skillName)
 
-    :param string skillName: Name of skill. Case-sensitive and must be an exact match
+    :RAM cost: 4 GB
+    :param string skillName: Name of skill. Case-sensitive.
+    :returns: Level of specified skill, -1 for invalid skills.
 
-    This function returns your level in the specified skill.
+    Example:
 
-    The function returns -1 if an invalid skill name is passed in
+    .. code-block:: javascript
+
+        bladeburner.getSkillLevel("Overclock"); // returns: 90

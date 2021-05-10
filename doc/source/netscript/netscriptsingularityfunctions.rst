@@ -24,8 +24,12 @@ level 3, then you will be able to access all of the Singularity Functions.
     travelToCity() <singularityfunctions/travelToCity>
     purchaseTor() <singularityfunctions/purchaseTor>
     purchaseProgram() <singularityfunctions/purchaseProgram>
-    getStats() <singularityfunctions/getStats>
-    getCharacterInformation() <singularityfunctions/getCharacterInformation>
+    getCurrentServer() <singularityfunctions/getCurrentServer>
+    connect() <singularityfunctions/connect>
+    manualHack() <singularityfunctions/manualHack>
+    installBackdoor() <singularityfunctions/installBackdoor>
+    getPlayer() <singularityfunctions/getPlayer>
+    hospitalize() <singularityfunctions/hospitalize>
     isBusy() <singularityfunctions/isBusy>
     stopAction() <singularityfunctions/stopAction>
     upgradeHomeRam() <singularityfunctions/upgradeHomeRam>
@@ -45,10 +49,20 @@ level 3, then you will be able to access all of the Singularity Functions.
     createProgram() <singularityfunctions/createProgram>
     commitCrime() <singularityfunctions/commitCrime>
     getCrimeChance() <singularityfunctions/getCrimeChance>
+    getCrimeStats() <singularityfunctions/getCrimeStats>
     getOwnedAugmentations() <singularityfunctions/getOwnedAugmentations>
     getOwnedSourceFiles() <singularityfunctions/getOwnedSourceFiles>
     getAugmentationsFromFaction() <singularityfunctions/getAugmentationsFromFaction>
     getAugmentationPrereq() <singularityfunctions/getAugmentationPrereq>
     getAugmentationCost() <singularityfunctions/getAugmentationCost>
+    getAugmentationStats() <singularityfunctions/getAugmentationStats>
     purchaseAugmentation() <singularityfunctions/purchaseAugmentation>
     installAugmentations() <singularityfunctions/installAugmentations>
+    softReset() <singularityfunctions/softReset>
+
+
+.. toctree::
+    :caption: Deprecated:
+
+    getStats() <singularityfunctions/getStats>
+    getCharacterInformation() <singularityfunctions/getCharacterInformation>

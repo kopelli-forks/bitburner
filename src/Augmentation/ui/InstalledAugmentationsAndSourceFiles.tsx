@@ -10,11 +10,14 @@ import * as React from "react";
 import { InstalledAugmentations } from "./InstalledAugmentations";
 import { ListConfiguration } from "./ListConfiguration";
 import { OwnedSourceFiles } from "./OwnedSourceFiles";
+import { SourceFileMinus1 } from "./SourceFileMinus1";
 
 import { Settings } from "../../Settings/Settings";
 import { OwnedAugmentationsOrderSetting } from "../../Settings/SettingEnums";
 
-type IProps = {}
+type IProps = {
+    // nothing special.
+}
 
 type IState = {
     rerenderFlag: boolean;
@@ -38,7 +41,7 @@ export class InstalledAugmentationsAndSourceFiles extends React.Component<IProps
         this.listRef = React.createRef();
     }
 
-    collapseAllHeaders() {
+    collapseAllHeaders(): void {
         const ul = this.listRef.current;
         if (ul == null) { return; }
         const tickers = ul.getElementsByClassName("accordion-header");
@@ -54,7 +57,7 @@ export class InstalledAugmentationsAndSourceFiles extends React.Component<IProps
         }
     }
 
-    expandAllHeaders() {
+    expandAllHeaders(): void {
         const ul = this.listRef.current;
         if (ul == null) { return; }
         const tickers = ul.getElementsByClassName("accordion-header");
@@ -70,7 +73,7 @@ export class InstalledAugmentationsAndSourceFiles extends React.Component<IProps
         }
     }
 
-    rerender() {
+    rerender(): void {
         this.setState((prevState) => {
             return {
                 rerenderFlag: !prevState.rerenderFlag,
@@ -78,17 +81,17 @@ export class InstalledAugmentationsAndSourceFiles extends React.Component<IProps
         });
     }
 
-    sortByAcquirementTime() {
+    sortByAcquirementTime(): void {
         Settings.OwnedAugmentationsOrder = OwnedAugmentationsOrderSetting.AcquirementTime;
         this.rerender();
     }
 
-    sortInOrder() {
+    sortInOrder(): void {
         Settings.OwnedAugmentationsOrder = OwnedAugmentationsOrderSetting.Alphabetically
         this.rerender();
     }
 
-    render() {
+    render(): React.ReactNode {
         return (
             <>
             <ListConfiguration
@@ -98,6 +101,7 @@ export class InstalledAugmentationsAndSourceFiles extends React.Component<IProps
                 sortInOrderFn={this.sortInOrder}
             />
             <ul className="augmentations-list" ref={this.listRef}>
+                <SourceFileMinus1 />
                 <OwnedSourceFiles />
                 <InstalledAugmentations />
             </ul>

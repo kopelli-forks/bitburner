@@ -19,6 +19,7 @@ import { LocationName }                 from "../Locations/data/LocationNames";
 import { Server }                       from "../Server/Server";
 import { IPlayerOwnedSourceFile }       from "../SourceFile/PlayerOwnedSourceFile";
 import { MoneySourceTracker }           from "../utils/MoneySourceTracker";
+import { Exploit }                        from "../Exploits/Exploit";
 
 export interface IPlayer {
     // Class members
@@ -56,6 +57,7 @@ export interface IPlayer {
     sleeves: Sleeve[];
     sleevesFromCovenant: number;
     sourceFiles: IPlayerOwnedSourceFile[];
+    exploits: Exploit[];
     totalPlaytime: number;
 
     // Stats
@@ -144,6 +146,7 @@ export interface IPlayer {
     hasCorporation(): boolean;
     hasGangWith(facName: string): boolean;
     hasTorRouter(): boolean;
+    hasProgram(program: string): boolean;
     inBladeburner(): boolean;
     inGang(): boolean;
     isQualified(company: Company, position: CompanyPosition): boolean;
@@ -153,7 +156,7 @@ export interface IPlayer {
     regenerateHp(amt: number): void;
     recordMoneySource(amt: number, source: string): void;
     setMoney(amt: number): void;
-    startBladeburner(p: object): void;
+    startBladeburner(p: any): void;
     startClass(costMult: number, expMult: number, className: string): void;
     startCorporation(corpName: string, additionalShares?: number): void;
     startCrime(crimeType: string,
@@ -173,4 +176,9 @@ export interface IPlayer {
     startWork(companyName: string): void;
     startWorkPartTime(companyName: string): void;
     travel(to: CityName): boolean;
+    giveExploit(exploit: Exploit): void;
+    queryStatFromString(str: string): number;
+    getIntelligenceBonus(weight: number): number;
+    getCasinoWinnings(): number;
+    quitJob(company: string): void;
 }

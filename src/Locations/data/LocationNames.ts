@@ -24,6 +24,7 @@ export enum LocationName {
     AevumSnapFitnessGym             = "Snap Fitness Gym",
     AevumSummitUniversity           = "Summit University",
     AevumWatchdogSecurity           = "Watchdog Security",
+    AevumCasino                     = "Iker Molina Casino",
 
     // Chongqing locations
     ChongqingKuaiGongInternational  = "KuaiGong International",
@@ -77,4 +78,4 @@ export enum LocationName {
 
     // Default name for Location objects
     Void                            = "The Void",
-};
+}

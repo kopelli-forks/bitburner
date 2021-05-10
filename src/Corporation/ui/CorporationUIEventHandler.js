@@ -16,7 +16,7 @@ import { Corporation,
 import { Industries,
          IndustryStartingCosts,
          IndustryDescriptions,
-         IndustryResearchTrees } from "../IndustryData";
+} from "../IndustryData";
 
 import { MaterialSizes } from "../MaterialSizes";
 
@@ -61,13 +61,13 @@ export class CorporationEventHandler {
     createBribeFactionsPopup() {
         const popupId = "cmpy-mgmt-bribe-factions-popup";
         const txt = createElement("p", {
-            innerText:"You can use Corporation funds or stock shares to bribe Faction Leaders in exchange for faction reputation"
+            innerText:"You can use Corporation funds or stock shares to bribe Faction Leaders in exchange for faction reputation",
         });
         const factionSelector = createElement("select", { margin:"3px" });
         for (let i = 0; i < Player.factions.length; ++i) {
             const facName = Player.factions[i];
             factionSelector.add(createElement("option", {
-                text: facName, value: facName
+                text: facName, value: facName,
             }));
         }
         var repGainText = createElement("p");
@@ -93,7 +93,7 @@ export class CorporationEventHandler {
                                             factionSelector.options[factionSelector.selectedIndex].value +
                                             " with this bribe";
                 }
-            }
+            },
         });
         stockSharesInput = createElement("input", {
             type:"number", placeholder:"Stock Shares", margin: "5px",
@@ -110,13 +110,12 @@ export class CorporationEventHandler {
                 } else {
                     var totalAmount = money + (stockShares * stockPrice);
                     var repGain = totalAmount / BribeToRepRatio;
-                    console.log("repGain: " + repGain);
                     repGainText.innerText = "You will gain " + numeralWrapper.format(repGain, "0,0") +
                                             " reputation with " +
                                             factionSelector.options[factionSelector.selectedIndex].value +
                                             " with this bribe";
                 }
-            }
+            },
         });
         var confirmButton = createElement("button", {
             class:"a-link-button", innerText:"Bribe", display:"inline-block",
@@ -146,7 +145,7 @@ export class CorporationEventHandler {
                     removeElementById(popupId);
                     return false;
                 }
-            }
+            },
         });
         const cancelButton = createPopupCloseButton(popupId, {
             class: "std-button",
@@ -188,7 +187,7 @@ export class CorporationEventHandler {
                     costIndicator.innerText = "Purchase " + numShares + " shares for a total of " +
                                               numeralWrapper.format(numShares * buybackPrice, '$0.000a');
                 }
-            }
+            },
         });
         var confirmBtn = createElement("button", {
             class:"a-link-button", innerText:"Buy shares", display:"inline-block",
@@ -222,7 +221,7 @@ export class CorporationEventHandler {
                 }
                 return false;
 
-            }
+            },
         });
         var cancelBtn = createPopupCloseButton(popupId, {
             class: "std-button",
@@ -250,7 +249,7 @@ export class CorporationEventHandler {
                 removeElementById(popupId);
                 this.rerender();
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, { innerText: "Cancel" });
 
@@ -265,7 +264,7 @@ export class CorporationEventHandler {
         const exportTxt = createElement("p", {
             innerText:"Select the industry and city to export this material to, as well as " +
                       "how much of this material to export per second. You can set the export " +
-                      "amount to 'MAX' to export all of the materials in this warehouse."
+                      "amount to 'MAX' to export all of the materials in this warehouse.",
         });
 
         //Select industry and city to export to
@@ -287,7 +286,7 @@ export class CorporationEventHandler {
                         return;
                     }
                 }
-            }
+            },
         });
 
         for (let i = 0; i < corp.divisions.length; ++i) {
@@ -300,7 +299,7 @@ export class CorporationEventHandler {
         //Select amount to export
         const exportAmount = createElement("input", {
             class: "text-input",
-            placeholder:"Export amount / s"
+            placeholder:"Export amount / s",
         });
 
         const exportBtn  = createElement("button", {
@@ -329,14 +328,14 @@ export class CorporationEventHandler {
                 mat.exp.push(exportObj);
                 removeElementById(popupId);
                 return false;
-            }
+            },
         });
 
         const cancelBtn = createPopupCloseButton(popupId, { innerText: "Cancel" });
 
         const currExportsText = createElement("p", {
             innerText:"Below is a list of all current exports of this material from this warehouse. " +
-                      "Clicking on one of the exports below will REMOVE that export."
+                      "Clicking on one of the exports below will REMOVE that export.",
         });
         const currExports = [];
         for (var i = 0; i < mat.exp.length; ++i) {
@@ -350,7 +349,7 @@ export class CorporationEventHandler {
                     mat.exp.splice(i, 1); //Remove export object
                     removeElementById(popupId);
                     createExportMaterialPopup(mat);
-                }
+                },
             }));
             })(i, mat, currExports);
         }
@@ -386,7 +385,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {allocateBtn.click();}
-            }
+            },
         });
 
         allocateBtn = createElement("button", {
@@ -405,7 +404,7 @@ export class CorporationEventHandler {
 
                 this.rerender();
                 return false;
-            }
+            },
         });
 
         const cancelBtn = createPopupCloseButton(popupId, {
@@ -479,7 +478,7 @@ export class CorporationEventHandler {
                 } else {
                     updateDynamicText(this.corp);
                 }
-            }
+            },
         });
 
         issueBtn = createElement("button", {
@@ -524,7 +523,7 @@ export class CorporationEventHandler {
 
                 this.rerender();
                 return false;
-            }
+            },
         });
 
         const cancelBtn = createPopupCloseButton(popupId, {
@@ -542,7 +541,7 @@ export class CorporationEventHandler {
         const popupId = "cmpy-mgmt-limit-product-production-popup";
         const txt = createElement("p", {
             innerText:"Enter a limit to the amount of this product you would " +
-                      "like to product per second. Leave the box empty to set no limit."
+                      "like to product per second. Leave the box empty to set no limit.",
         });
         let confirmBtn;
         const input = createElement("input", {
@@ -552,7 +551,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) { confirmBtn.click(); }
-            }
+            },
         });
         confirmBtn = createElement("button", {
             class: "std-button",
@@ -579,7 +578,7 @@ export class CorporationEventHandler {
                 removeElementById(popupId);
                 this.rerender();
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, { innerText: "Cancel" });
         cancelBtn.style.margin = "6px";
@@ -601,7 +600,7 @@ export class CorporationEventHandler {
             if (division.offices[cityName] instanceof OfficeSpace) {
                 designCity.add(createElement("option", {
                     value: cityName,
-                    text: cityName
+                    text: cityName,
                 }));
             }
         }
@@ -631,7 +630,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) { confirmBtn.click(); }
-            }
+            },
         });
         confirmBtn = createElement("button", {
             class: "std-button",
@@ -666,7 +665,7 @@ export class CorporationEventHandler {
                 }
                 this.rerender();
                 return false;
-            }
+            },
         })
         const cancelBtn = createPopupCloseButton(popupId, {
             class: "std-button",
@@ -680,8 +679,6 @@ export class CorporationEventHandler {
 
     // Create a popup that lets the player use the Market TA research for Materials
     createMaterialMarketTaPopup(mat, industry) {
-        const corp = this.corp;
-
         const popupId = "cmpy-mgmt-marketta-popup";
         const markupLimit = mat.getMarkupLimit();
         const ta1 = createElement("p", {
@@ -700,7 +697,7 @@ export class CorporationEventHandler {
             for: useTa1AutoSaleId,
             innerText: "Use Market-TA.I for Auto-Sale Price",
             tooltip: "If this is enabled, then this Material will automatically " +
-                     "be sold at the price identified by Market-TA.I (i.e. the price shown above)"
+                     "be sold at the price identified by Market-TA.I (i.e. the price shown above)",
         })
         const useTa1AutoSaleCheckbox = createElement("input", {
             checked: mat.marketTa1,
@@ -709,7 +706,7 @@ export class CorporationEventHandler {
             type: "checkbox",
             changeListener: (e) => {
                 mat.marketTa1 = e.target.checked;
-            }
+            },
         });
         useTa1AutoSaleDiv.appendChild(useTa1AutoSaleLabel);
         useTa1AutoSaleDiv.appendChild(useTa1AutoSaleCheckbox);
@@ -767,7 +764,7 @@ export class CorporationEventHandler {
                 tooltip: "If this is enabled, then this Material will automatically " +
                          "be sold at the optimal price such that the amount sold matches the " +
                          "amount produced. (i.e. the highest possible price, while still ensuring " +
-                         " that all produced materials will be sold)"
+                         " that all produced materials will be sold)",
             })
             const useTa2AutoSaleCheckbox = createElement("input", {
                 checked: mat.marketTa2,
@@ -776,14 +773,14 @@ export class CorporationEventHandler {
                 type: "checkbox",
                 changeListener: (e) => {
                     mat.marketTa2 = e.target.checked;
-                }
+                },
             });
             useTa2AutoSaleDiv.appendChild(useTa2AutoSaleLabel);
             useTa2AutoSaleDiv.appendChild(useTa2AutoSaleCheckbox);
 
             const ta2OverridesTa1 = createElement("p", {
                 innerText: "Note that Market-TA.II overrides Market-TA.I. This means that if " +
-                           "both are enabled, then Market-TA.II will take effect, not Market-TA.I"
+                           "both are enabled, then Market-TA.II will take effect, not Market-TA.I",
             });
 
             createPopup(popupId, [ta1, useTa1AutoSaleDiv, ta2Text, ta2Input, useTa2AutoSaleDiv, ta2OverridesTa1, closeBtn]);
@@ -806,7 +803,7 @@ export class CorporationEventHandler {
             if (!(division.offices[cityName] instanceof OfficeSpace)) {
                 citySelector.add(createElement("option", {
                     text: cityName,
-                    value: cityName
+                    value: cityName,
                 }));
             }
         }
@@ -833,7 +830,7 @@ export class CorporationEventHandler {
                 removeElementById(popupId);
                 this.rerender();
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, {
             class: "std-button",
@@ -853,7 +850,7 @@ export class CorporationEventHandler {
             innerHTML: "Create a new division to expand into a new industry:",
         });
         var selector = createElement("select", {
-            class:"dropdown"
+            class:"dropdown",
         });
         var industryDescription = createElement("p", {});
         var yesBtn;
@@ -867,11 +864,11 @@ export class CorporationEventHandler {
             onkeyup:(e)=>{
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {yesBtn.click();}
-            }
+            },
         });
         var nameLabel = createElement("label", {
             for:"cmpy-mgmt-expand-industry-name-input",
-            innerText:"Division name: "
+            innerText:"Division name: ",
         });
         yesBtn = createElement("span", {
             class:"popup-box-button",
@@ -906,7 +903,7 @@ export class CorporationEventHandler {
                     this.rerender();
                 }
                 return false;
-            }
+            },
         });
 
         const noBtn = createPopupCloseButton(popupId, {
@@ -924,7 +921,7 @@ export class CorporationEventHandler {
         // Have Agriculture be first as recommended option
         if (!ownedIndustries["Agriculture"]) {
             selector.add(createElement("option", {
-                text:Industries["Agriculture"], value:"Agriculture"
+                text:Industries["Agriculture"], value:"Agriculture",
             }));
         }
 
@@ -965,8 +962,6 @@ export class CorporationEventHandler {
 
     // Create a popup that lets the player use the Market TA research for Products
     createProductMarketTaPopup(product, industry) {
-        const corp = this.corp;
-
         const popupId = "cmpy-mgmt-marketta-popup";
         const markupLimit = product.rat / product.mku;
         const ta1 = createElement("p", {
@@ -985,7 +980,7 @@ export class CorporationEventHandler {
             for: useTa1AutoSaleId,
             innerText: "Use Market-TA.I for Auto-Sale Price",
             tooltip: "If this is enabled, then this Product will automatically " +
-                     "be sold at the price identified by Market-TA.I (i.e. the price shown above)"
+                     "be sold at the price identified by Market-TA.I (i.e. the price shown above)",
         })
         const useTa1AutoSaleCheckbox = createElement("input", {
             checked: product.marketTa1,
@@ -994,7 +989,7 @@ export class CorporationEventHandler {
             type: "checkbox",
             changeListener: (e) => {
                 product.marketTa1 = e.target.checked;
-            }
+            },
         });
         useTa1AutoSaleDiv.appendChild(useTa1AutoSaleLabel);
         useTa1AutoSaleDiv.appendChild(useTa1AutoSaleCheckbox);
@@ -1044,7 +1039,7 @@ export class CorporationEventHandler {
                 tooltip: "If this is enabled, then this Product will automatically " +
                          "be sold at the optimal price such that the amount sold matches the " +
                          "amount produced. (i.e. the highest possible price, while still ensuring " +
-                         " that all produced materials will be sold)"
+                         " that all produced materials will be sold)",
             })
             const useTa2AutoSaleCheckbox = createElement("input", {
                 checked: product.marketTa2,
@@ -1053,14 +1048,14 @@ export class CorporationEventHandler {
                 type: "checkbox",
                 changeListener: (e) => {
                     product.marketTa2 = e.target.checked;
-                }
+                },
             });
             useTa2AutoSaleDiv.appendChild(useTa2AutoSaleLabel);
             useTa2AutoSaleDiv.appendChild(useTa2AutoSaleCheckbox);
 
             const ta2OverridesTa1 = createElement("p", {
                 innerText: "Note that Market-TA.II overrides Market-TA.I. This means that if " +
-                           "both are enabled, then Market-TA.II will take effect, not Market-TA.I"
+                           "both are enabled, then Market-TA.II will take effect, not Market-TA.I",
             });
 
             createPopup(popupId, [ta1, useTa1AutoSaleDiv, ta2Text, ta2Input, useTa2AutoSaleDiv, ta2OverridesTa1, closeBtn]);
@@ -1077,7 +1072,7 @@ export class CorporationEventHandler {
         const purchasePopupId = "cmpy-mgmt-material-purchase-popup";
         const txt = createElement("p", {
             innerHTML: "Enter the amount of " + mat.name + " you would like " +
-                       "to purchase per second. This material's cost changes constantly"
+                       "to purchase per second. This material's cost changes constantly",
         });
         let confirmBtn;
         let input = createElement("input", {
@@ -1088,7 +1083,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {confirmBtn.click();}
-            }
+            },
         });
         confirmBtn = createElement("button", {
             innerText: "Confirm", class: "std-button",
@@ -1102,7 +1097,7 @@ export class CorporationEventHandler {
                     this.rerender();
                     return false;
                 }
-            }
+            },
         });
         const clearButton = createElement("button", {
             innerText: "Clear Purchase", class: "std-button",
@@ -1111,7 +1106,7 @@ export class CorporationEventHandler {
                 removeElementById(purchasePopupId);
                 this.rerender();
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(purchasePopupId, {
             class: "std-button",
@@ -1154,7 +1149,7 @@ export class CorporationEventHandler {
                     e.preventDefault();
                     updateBulkPurchaseText(e.target.value);
                     if (e.keyCode === KEY.ENTER) {bulkPurchaseConfirmBtn.click();}
-                }
+                },
             });
 
             bulkPurchaseConfirmBtn = createElement("button", {
@@ -1185,7 +1180,7 @@ export class CorporationEventHandler {
                         removeElementById(purchasePopupId);
                         return false;
                     }
-                }
+                },
             })
 
             elems.push(bulkPurchaseInfo);
@@ -1225,7 +1220,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {confirmBtn.click();}
-            }
+            },
         });
 
         let inputButtonInitValue = mat.sCost ? mat.sCost : null;
@@ -1242,7 +1237,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {confirmBtn.click();}
-            }
+            },
         });
         confirmBtn = createElement("button", {
             class: "std-button",
@@ -1308,7 +1303,7 @@ export class CorporationEventHandler {
                 removeElementById(sellPopupId);
                 this.rerender();
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(sellPopupId, {
             class: "std-button",
@@ -1348,7 +1343,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {confirmBtn.click();}
-            }
+            },
         });
 
         let inputButtonInitValue = product.sCost ? product.sCost : null;
@@ -1366,7 +1361,7 @@ export class CorporationEventHandler {
             onkeyup: (e) => {
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {confirmBtn.click();}
-            }
+            },
         });
         const checkboxDiv = createElement("div", {
             border: "1px solid white",
@@ -1479,7 +1474,7 @@ export class CorporationEventHandler {
                 removeElementById(popupId);
                 this.rerender();
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, { class: "std-button" });
 
@@ -1516,12 +1511,10 @@ export class CorporationEventHandler {
                 } else {
                     const stockSaleResults = this.corp.calculateShareSale(numShares);
                     const profit = stockSaleResults[0];
-                    const newSharePrice = stockSaleResults[1];
-                    const newSharesUntilUpdate = stockSaleResults[2];
                     profitIndicator.innerText = "Sell " + numShares + " shares for a total of " +
                                                 numeralWrapper.format(profit, '$0.000a');
                 }
-            }
+            },
         });
         const confirmBtn = createElement("button", {
             class:"a-link-button", innerText:"Sell shares", display:"inline-block",
@@ -1539,8 +1532,7 @@ export class CorporationEventHandler {
 
                     this.corp.numShares -= shares;
                     if (isNaN(this.corp.issuedShares)) {
-                        console.log("ERROR: Corporation issuedShares is NaN: " + this.corp.issuedShares);
-                        console.log("Converting to number now");
+                        console.error(`Corporation issuedShares is NaN: ${this.corp.issuedShares}`);
                         var res = parseInt(this.corp.issuedShares);
                         if (isNaN(res)) {
                             this.corp.issuedShares = 0;
@@ -1564,7 +1556,7 @@ export class CorporationEventHandler {
                     return false;
                 }
 
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, {
             class: "std-button",
@@ -1581,10 +1573,10 @@ export class CorporationEventHandler {
         const popupId = "cmpy-mgmt-throw-office-party-popup";
         const txt = createElement("p", {
             innerText:"Enter the amount of money you would like to spend PER EMPLOYEE " +
-                      "on this office party"
+                      "on this office party",
         });
         const totalCostTxt = createElement("p", {
-            innerText:"Throwing this party will cost a total of $0"
+            innerText:"Throwing this party will cost a total of $0",
         });
         let confirmBtn;
         const input = createElement("input", {
@@ -1600,7 +1592,7 @@ export class CorporationEventHandler {
             onkeyup:(e)=>{
                 e.preventDefault();
                 if (e.keyCode === KEY.ENTER) {confirmBtn.click();}
-            }
+            },
         });
         confirmBtn = createElement("button", {
             class: "std-button",
@@ -1624,7 +1616,7 @@ export class CorporationEventHandler {
                     }
                 }
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, { class: "std-button", innerText: "Cancel" });
 
@@ -1663,7 +1655,7 @@ export class CorporationEventHandler {
         const upgradeCostMax = OfficeInitialCost * mult;
 
         const text = createElement("p", {
-            innerText:"Increase the size of your office space to fit additional employees!"
+            innerText:"Increase the size of your office space to fit additional employees!",
         });
         const text2 = createElement("p", { innerText: "Upgrade size: " });
 
@@ -1682,7 +1674,7 @@ export class CorporationEventHandler {
                 }
                 removeElementById(popupId);
                 return false;
-            }
+            },
         });
         const confirmBtn15 = createElement("button", {
             class: this.corp.funds.lt(upgradeCost15) ? "a-link-button-inactive" : "a-link-button",
@@ -1699,7 +1691,7 @@ export class CorporationEventHandler {
                 }
                 removeElementById(popupId);
                 return false;
-            }
+            },
         });
         const confirmBtnMax = createElement("button", {
             class:this.corp.funds.lt(upgradeCostMax) ? "a-link-button-inactive" : "a-link-button",
@@ -1716,7 +1708,7 @@ export class CorporationEventHandler {
                 }
                 removeElementById(popupId);
                 return false;
-            }
+            },
         });
         const cancelBtn = createPopupCloseButton(popupId, { innerText: "Cancel" });
         cancelBtn.style.margin = "4px";

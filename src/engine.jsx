@@ -5,7 +5,7 @@
  */
 import {
     convertTimeMsToTimeElapsedString,
-    replaceAt
+    replaceAt,
 } from "../utils/StringHelperFunctions";
 import { logBoxUpdateText, logBoxOpened } from "../utils/LogBox";
 import { Augmentations } from "./Augmentation/Augmentations";
@@ -15,7 +15,7 @@ import {
 } from "./Augmentation/AugmentationHelpers";
 import { AugmentationNames } from "./Augmentation/data/AugmentationNames";
 import {
-    initBitNodeMultipliers
+    initBitNodeMultipliers,
 } from "./BitNode/BitNode";
 import { Bladeburner } from "./Bladeburner";
 import { CharacterOverviewComponent } from "./ui/React/CharacterOverview";
@@ -30,17 +30,16 @@ import {
     displayFactionContent,
     joinFaction,
     processPassiveFactionRepGain,
-    inviteToFaction
+    inviteToFaction,
 } from "./Faction/FactionHelpers";
 import { FconfSettings } from "./Fconf/FconfSettings";
 import {
     hasHacknetServers,
     renderHacknetNodesUI,
     clearHacknetNodesUI,
-    processHacknetEarnings
+    processHacknetEarnings,
 } from "./Hacknet/HacknetHelpers";
 import { iTutorialStart } from "./InteractiveTutorial";
-import { initLiterature } from "./Literature";
 import { LocationName } from "./Locations/data/LocationNames";
 import { LocationRoot } from "./Locations/ui/Root";
 import { checkForMessagesToSend, initMessages } from "./Message/MessageHelpers";
@@ -55,41 +54,43 @@ import { prestigeAugmentation } from "./Prestige";
 import {
     displayCreateProgramContent,
     getNumAvailableCreateProgram,
-    initCreateProgramButtons
+    initCreateProgramButtons,
 } from "./Programs/ProgramHelpers";
 import { redPillFlag } from "./RedPill";
 import { saveObject, loadGame } from "./SaveObject";
 import {
     getCurrentEditor,
     scriptEditorInit,
-    updateScriptEditorContent
+    updateScriptEditorContent,
 } from "./Script/ScriptHelpers";
-import { initForeignServers } from "./Server/AllServers";
+import { initForeignServers, AllServers } from "./Server/AllServers";
 import { Settings } from "./Settings/Settings";
 import { updateSourceFileFlags } from "./SourceFile/SourceFileFlags";
 import { initSpecialServerIps } from "./Server/SpecialServerIps";
 import {
     initSymbolToStockMap,
     processStockPrices,
-    displayStockMarketContent
+    displayStockMarketContent,
 } from "./StockMarket/StockMarket";
+import { displayMilestonesContent } from "./Milestones/MilestoneHelpers";
 import { Terminal, postNetburnerText } from "./Terminal";
 import { Sleeve } from "./PersonObjects/Sleeve/Sleeve";
 import {
     clearSleevesPage,
     createSleevesPage,
-    updateSleevesPage
+    updateSleevesPage,
 } from "./PersonObjects/Sleeve/SleeveUI";
 import {
     clearResleevesPage,
-    createResleevesPage
+    createResleevesPage,
 } from "./PersonObjects/Resleeving/ResleevingUI";
 
 import { createStatusText } from "./ui/createStatusText";
-import { displayCharacterInfo } from "./ui/displayCharacterInfo";
+import { CharacterInfo } from "./ui/CharacterInfo";
 import { Page, routing } from "./ui/navigationTracking";
-import { numeralWrapper } from "./ui/numeralFormat";
 import { setSettingsLabels } from "./ui/setSettingsLabels";
+import { Money } from "./ui/React/Money";
+import { Hashes } from "./ui/React/Hashes";
 
 import { ActiveScriptsRoot } from "./ui/ActiveScripts/Root";
 import { initializeMainMenuHeaders } from "./ui/MainMenu/Headers";
@@ -102,6 +103,8 @@ import { createElement } from "../utils/uiHelpers/createElement";
 import { exceptionAlert } from "../utils/helpers/exceptionAlert";
 import { removeLoadingScreen } from "../utils/uiHelpers/removeLoadingScreen";
 import { KEY } from "../utils/helpers/keyCodes";
+import "./Exploits/tampering";
+import "./Exploits/unclickable";
 
 import React from "react";
 import ReactDOM from "react-dom";
@@ -130,10 +133,10 @@ $(document).keydown(function(e) {
         if (getCurrentEditor().isFocused()) {
             return;
         }
-    } catch(e) {}
+    } catch(error) {}
 
     if (!Player.isWorking && !redPillFlag && !inMission && !cinematicTextFlag) {
-        if (e.keyCode == 84 && e.altKey) {
+        if (e.keyCode == KEY.T && e.altKey) {
             e.preventDefault();
             Engine.loadTerminalContent();
         } else if (e.keyCode === KEY.C && e.altKey) {
@@ -173,6 +176,12 @@ $(document).keydown(function(e) {
         } else if (e.keyCode === KEY.U && e.altKey) {
             e.preventDefault();
             Engine.loadTutorialContent();
+        } else if (e.keyCode === KEY.B && e.altKey) {
+            e.preventDefault();
+            Engine.loadBladeburnerContent();
+        } else if (e.keyCode === KEY.G && e.altKey) {
+            e.preventDefault();
+            Engine.loadGangContent();
         }
     }
 
@@ -196,13 +205,6 @@ const Engine = {
     // Display objects
     // TODO-Refactor this into its own component
     Display: {
-        // Progress bar
-        progress:               null,
-
-        // Display for status text (such as "Saved" or "Loaded")
-        statusText:             null,
-
-        hacking_skill:          null,
 
         // Main menu content
         terminalContent:                null,
@@ -214,6 +216,7 @@ const Engine = {
         factionsContent:                null,
         factionContent:                 null,
         augmentationsContent:           null,
+        milestonesContent:              null,
         tutorialContent:                null,
         infiltrationContent:            null,
         stockMarketContent:             null,
@@ -266,7 +269,7 @@ const Engine = {
         routing.navigateTo(Page.ActiveScripts);
         ReactDOM.render(
             <ActiveScriptsRoot p={Player} workerScripts={workerScripts} />,
-            Engine.Display.activeScriptsContent
+            Engine.Display.activeScriptsContent,
         )
         MainMenuLinks.ActiveScripts.classList.add("active");
     },
@@ -307,6 +310,14 @@ const Engine = {
         routing.navigateTo(Page.Augmentations);
         displayAugmentationsContent(Engine.Display.augmentationsContent);
         MainMenuLinks.Augmentations.classList.add("active");
+    },
+
+    loadMilestonesContent: function() {
+        Engine.hideAllContent();
+        Engine.Display.milestonesContent.style.display = "block";
+        routing.navigateTo(Page.Milestones);
+        displayMilestonesContent();
+        MainMenuLinks.Milestones.classList.add("active");
     },
 
     loadTutorialContent: function() {
@@ -494,6 +505,7 @@ const Engine = {
         Engine.Display.augmentationsContent.style.display = "none";
         ReactDOM.unmountComponentAtNode(Engine.Display.augmentationsContent);
 
+        Engine.Display.milestonesContent.style.display = "none";
         Engine.Display.tutorialContent.style.display = "none";
 
         Engine.Display.locationContent.style.display = "none";
@@ -548,6 +560,7 @@ const Engine = {
         MainMenuLinks.Bladeburner.classList.remove("active");
         MainMenuLinks.Corporation.classList.remove("active");
         MainMenuLinks.Gang.classList.remove("active");
+        MainMenuLinks.Milestones.classList.remove("active");
         MainMenuLinks.Tutorial.classList.remove("active");
         MainMenuLinks.Options.classList.remove("active");
         MainMenuLinks.DevMenu.classList.remove("active");
@@ -567,7 +580,7 @@ const Engine = {
 
     /// Display character info
     updateCharacterInfo: function() {
-        displayCharacterInfo(Engine.Display.characterInfo, Player);
+        ReactDOM.render(CharacterInfo(Player), Engine.Display.characterInfo)
     },
 
     // TODO Refactor this into Faction implementation
@@ -576,10 +589,10 @@ const Engine = {
 
         // Factions
         Engine.Display.factionsContent.appendChild(createElement("h1", {
-            innerText:"Factions"
+            innerText:"Factions",
         }));
         Engine.Display.factionsContent.appendChild(createElement("p", {
-            innerText:"Lists all factions you have joined"
+            innerText:"Lists all factions you have joined",
         }));
         var factionsList = createElement("ul");
         Engine.Display.factionsContent.appendChild(createElement("br"));
@@ -592,11 +605,11 @@ const Engine = {
                 factionsList.appendChild(createElement("a", {
                     class:"a-link-button", innerText:factionName, padding:"4px", margin:"4px",
                     display:"inline-block",
-                    clickListener:()=>{
+                    clickListener: () => {
                         Engine.loadFactionContent();
                         displayFactionContent(factionName);
                         return false;
-                    }
+                    },
                 }));
                 factionsList.appendChild(createElement("br"));
             }()); // Immediate invocation
@@ -606,13 +619,12 @@ const Engine = {
 
         // Invited Factions
         Engine.Display.factionsContent.appendChild(createElement("h1", {
-            innerText:"Outstanding Faction Invitations"
+            innerText:"Outstanding Faction Invitations",
         }));
         Engine.Display.factionsContent.appendChild(createElement("p", {
             width:"70%",
-            innerText:"Lists factions you have been invited to, as well as " +
-                      "factions you have previously rejected. You can accept " +
-                      "these faction invitations at any time."
+            innerText:"Lists factions you have been invited to. You can accept " +
+                      "these faction invitations at any time.",
         }));
         var invitationsList = createElement("ul");
 
@@ -623,7 +635,7 @@ const Engine = {
 
                 var item = createElement("li", {padding:"6px", margin:"6px"});
                 item.appendChild(createElement("p", {
-                    innerText:factionName, display:"inline", margin:"4px", padding:"4px"
+                    innerText:factionName, display:"inline", margin:"4px", padding:"4px",
                 }));
                 item.appendChild(createElement("a", {
                     innerText:"Accept Faction Invitation",
@@ -631,15 +643,9 @@ const Engine = {
                     clickListener: (e) => {
                         if (!e.isTrusted) { return false; }
                         joinFaction(Factions[factionName]);
-                        for (var i = 0; i < Player.factionInvitations.length; ++i) {
-                            if (Player.factionInvitations[i] == factionName || Factions[Player.factionInvitations[i]].isBanned) {
-                                Player.factionInvitations.splice(i, 1);
-                                i--;
-                            }
-                        }
                         Engine.displayFactionsInfo();
                         return false;
-                    }
+                    },
                 }));
 
                 invitationsList.appendChild(item);
@@ -774,8 +780,9 @@ const Engine = {
         updateDisplaysLong: 15,
         updateActiveScriptsDisplay: 5,
         createProgramNotifications: 10,
+        augmentationsNotifications: 10,
         checkFactionInvitations: 100,
-        passiveFactionGrowth: 600,
+        passiveFactionGrowth: 5,
         messages: 150,
         mechanicProcess: 5, // Processes certain mechanics (Corporation, Bladeburner)
         contractGeneration: 3000, // Generate Coding Contracts
@@ -815,7 +822,7 @@ const Engine = {
             if (routing.isOn(Page.ActiveScripts)) {
                 ReactDOM.render(
                     <ActiveScriptsRoot p={Player} workerScripts={workerScripts} />,
-                    Engine.Display.activeScriptsContent
+                    Engine.Display.activeScriptsContent,
                 )
             }
 
@@ -868,6 +875,19 @@ const Engine = {
             Engine.Counters.createProgramNotifications = 10;
         }
 
+        if (Engine.Counters.augmentationsNotifications <= 0) {
+            var num = Player.queuedAugmentations.length;
+            var elem = document.getElementById("augmentations-notification");
+            if (num > 0) {
+                elem.innerHTML = num;
+                elem.setAttribute("class", "notification-on");
+            } else {
+                elem.innerHTML = "";
+                elem.setAttribute("class", "notification-off");
+            }
+            Engine.Counters.augmentationsNotifications = 10;
+        }
+
         if (Engine.Counters.checkFactionInvitations <= 0) {
             var invitedFactions = Player.checkForFactionInvitations();
             if (invitedFactions.length > 0) {
@@ -881,13 +901,24 @@ const Engine = {
                 var randFaction = invitedFactions[Math.floor(Math.random() * invitedFactions.length)];
                 inviteToFaction(randFaction);
             }
+
+            const num = Player.factionInvitations.length;
+            const elem = document.getElementById("factions-notification");
+            if (num > 0) {
+                elem.innerHTML = num;
+                elem.setAttribute("class", "notification-on");
+            } else {
+                elem.innerHTML = "";
+                elem.setAttribute("class", "notification-off");
+            }
+
             Engine.Counters.checkFactionInvitations = 100;
         }
 
         if (Engine.Counters.passiveFactionGrowth <= 0) {
-            var adjustedCycles = Math.floor((600 - Engine.Counters.passiveFactionGrowth));
+            var adjustedCycles = Math.floor((5 - Engine.Counters.passiveFactionGrowth));
             processPassiveFactionRepGain(adjustedCycles);
-            Engine.Counters.passiveFactionGrowth = 600;
+            Engine.Counters.passiveFactionGrowth = 5;
         }
 
         if (Engine.Counters.messages <= 0) {
@@ -1029,6 +1060,7 @@ const Engine = {
         const bladeburner       = document.getElementById("bladeburner-tab");
         const corp              = document.getElementById("corporation-tab");
         const gang              = document.getElementById("gang-tab");
+        const milestones        = document.getElementById("milestones-tab");
         const tutorial          = document.getElementById("tutorial-tab");
         const options           = document.getElementById("options-tab");
         const dev               = document.getElementById("dev-tab");
@@ -1043,7 +1075,6 @@ const Engine = {
             if (Player.hasWseAccount) {
                 initSymbolToStockMap();
             }
-            initLiterature();
             updateSourceFileFlags(Player);
 
             // Calculate the number of cycles have elapsed while offline
@@ -1054,7 +1085,6 @@ const Engine = {
             // Process offline progress
             var offlineProductionFromScripts = loadAllRunningScripts(); // This also takes care of offline production for those scripts
             if (Player.isWorking) {
-                console.log("work() called in load() for " + numCyclesOffline * Engine._idleSpeed + " milliseconds");
                 if (Player.workType == CONSTANTS.WorkTypeFaction) {
                     Player.workForFaction(numCyclesOffline);
                 } else if (Player.workType == CONSTANTS.WorkTypeCreateProgram) {
@@ -1073,8 +1103,8 @@ const Engine = {
             // Hacknet Nodes offline progress
             var offlineProductionFromHacknetNodes = processHacknetEarnings(numCyclesOffline);
             const hacknetProdInfo = hasHacknetServers() ?
-                                    `${numeralWrapper.format(offlineProductionFromHacknetNodes, "0.000a")} hashes` :
-                                    `${numeralWrapper.formatMoney(offlineProductionFromHacknetNodes)}`;
+                                    <>{Hashes(offlineProductionFromHacknetNodes)} hashes</>:
+                                    Money(offlineProductionFromHacknetNodes);
 
             // Passive faction rep gain offline
             processPassiveFactionRepGain(numCyclesOffline);
@@ -1126,13 +1156,13 @@ const Engine = {
             Engine.start(); // Run main game loop and Scripts loop
             removeLoadingScreen();
             const timeOfflineString = convertTimeMsToTimeElapsedString(time);
-            dialogBoxCreate(`Offline for ${timeOfflineString}. While you were offline, your scripts ` +
-                            "generated <span class='money-gold'>" +
-                            numeralWrapper.formatMoney(offlineProductionFromScripts) + "</span> " +
-                            "and your Hacknet Nodes generated <span class='money-gold'>" + hacknetProdInfo + "</span>");
+            dialogBoxCreate(<>
+                Offline for {timeOfflineString}. While you were offline, your scripts generated {Money(offlineProductionFromScripts)} and your Hacknet Nodes generated {hacknetProdInfo}.
+            </>);
             // Close main menu accordions for loaded game
             var visibleMenuTabs = [terminal, createScript, activeScripts, stats,
-                                   hacknetnodes, city, tutorial, options, dev];
+                                   hacknetnodes, city, milestones, tutorial,
+                                   options, dev];
             if (Player.firstFacInvRecvd) {visibleMenuTabs.push(factions);}
             else {factions.style.display = "none";}
             if (Player.firstAugPurchased) {visibleMenuTabs.push(augmentations);}
@@ -1155,7 +1185,6 @@ const Engine = {
             Engine.closeMainMenuHeader(visibleMenuTabs);
         } else {
             // No save found, start new game
-            console.log("Initializing new game");
             initBitNodeMultipliers(Player);
             initSpecialServerIps();
             Engine.setDisplayElements(); // Sets variables for important DOM elements
@@ -1166,7 +1195,6 @@ const Engine = {
             initFactions();
             initAugmentations();
             initMessages();
-            initLiterature();
             updateSourceFileFlags(Player);
 
             // Open main menu accordions for new game
@@ -1193,8 +1221,8 @@ const Engine = {
 
             Engine.openMainMenuHeader(
                 [terminal, createScript, activeScripts, stats,
-                 hacknetnodes, city,
-                 tutorial, options]
+                 hacknetnodes, city, milestones,
+                 tutorial, options],
             );
 
             // Start interactive tutorial
@@ -1236,6 +1264,8 @@ const Engine = {
         Engine.Display.augmentationsContent = document.getElementById("augmentations-container");
         Engine.Display.augmentationsContent.style.display = "none";
 
+        Engine.Display.milestonesContent = document.getElementById("milestones-container");
+        Engine.Display.milestonesContent.style.display = "none";
 
         Engine.Display.tutorialContent = document.getElementById("tutorial-container");
         Engine.Display.tutorialContent.style.display = "none";
@@ -1377,6 +1407,11 @@ const Engine = {
             return false;
         });
 
+        MainMenuLinks.Milestones.addEventListener("click", function() {
+            Engine.loadMilestonesContent();
+            return false;
+        });
+
         MainMenuLinks.Tutorial.addEventListener("click", function() {
             Engine.loadTutorialContent();
             return false;
@@ -1432,7 +1467,6 @@ const Engine = {
             var cancelButton = document.getElementById("work-in-progress-cancel-button");
             cancelButton.addEventListener("click", function() {
                 if (Player.workType == CONSTANTS.WorkTypeFaction) {
-                    var fac = Factions[Player.currentWorkFactionName];
                     Player.finishFactionWork(true);
                 } else if (Player.workType == CONSTANTS.WorkTypeCreateProgram) {
                     Player.finishCreateProgramWork(true);
@@ -1459,6 +1493,7 @@ const Engine = {
         document.getElementById("active-scripts-menu-link").removeAttribute("class");
         document.getElementById("hacknet-nodes-menu-link").removeAttribute("class");
         document.getElementById("city-menu-link").removeAttribute("class");
+        document.getElementById("milestones-menu-link").removeAttribute("class");
         document.getElementById("tutorial-menu-link").removeAttribute("class");
 
         // Copy Save Data to Clipboard
@@ -1491,7 +1526,8 @@ const Engine = {
                 // Use the Async Clipboard API
                 navigator.clipboard.writeText(saveString).then(function() {
                     createStatusText("Copied save to clipboard");
-                }, function(e) {
+                }, function(err) {
+                    console.error(err);
                     console.error("Unable to copy save data to clipboard using Async API");
                     createStatusText("Failed to copy save");
                 })
@@ -1500,9 +1536,10 @@ const Engine = {
 
         // DEBUG Delete active Scripts on home
         document.getElementById("debug-delete-scripts-link").addEventListener("click", function() {
-            console.log("Deleting running scripts on home computer");
-            Player.getHomeComputer().runningScripts = [];
-            dialogBoxCreate("Forcefully deleted all running scripts on home computer. Please save and refresh page");
+            for(const hostname of Object.keys(AllServers)) {
+                AllServers[hostname].runningScripts = [];
+            }
+            dialogBoxCreate("Forcefully deleted all running scripts. Please save and refresh page.");
             gameOptionsBoxClose();
             return false;
         });
@@ -1519,7 +1556,7 @@ const Engine = {
     start: function() {
         // Run main loop
         Engine.idleTimer();
-    }
+    },
 };
 
 var indexedDb, indexedDbRequest;
@@ -1536,30 +1573,29 @@ window.onload = function() {
     indexedDbRequest = window.indexedDB.open("bitburnerSave", 1);
 
     indexedDbRequest.onerror = function(e) {
-        console.log("Error opening indexedDB: ");
-        console.log(e);
+        console.error("Error opening indexedDB: ");
+        console.error(e);
         return Engine.load(null); // Try to load from localstorage
     };
 
     indexedDbRequest.onsuccess = function(e) {
-        console.log("Opening bitburnerSave database successful!");
         indexedDb = e.target.result;
         var transaction = indexedDb.transaction(["savestring"]);
         var objectStore = transaction.objectStore("savestring");
         var request = objectStore.get("save");
         request.onerror = function(e) {
-            console.log("Error in Database request to get savestring: " + e);
+            console.error("Error in Database request to get savestring: " + e);
             return Engine.load(null); // Try to load from localstorage
         }
 
-        request.onsuccess = function(e) {
+        request.onsuccess = function() {
             Engine.load(request.result);
         }
     };
 
     indexedDbRequest.onupgradeneeded = function(e) {
-        var db = e.target.result;
-        var objectStore = db.createObjectStore("savestring");
+        const db = e.target.result;
+        db.createObjectStore("savestring");
     }
 };
 

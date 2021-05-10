@@ -3,6 +3,511 @@
 Changelog
 =========
 
+
+v0.51.8 - 2021-05-07 It was there all along (hydroflame)
+--------------------------------------------------------
+
+**Servers**
+
+* Update n00dles metadata
+
+**Netscript**
+
+* 'hashGainRate' use the correct 'usedRam' and 'maxRam'
+* Fix 'setActionAutolevel' logging.
+* Fix 'setActionLevel' not working at all.
+* Add 'installBackdoor' singularity function.
+
+**Hacknet**
+
+* Fix Hacknet Servers total production always displaying 0
+
+**Documentation**
+
+* Updated guide to no longer recommend BN12.
+* Fix documentation for maxNumNodes (@ModdedGamers)
+* Fix typo in 'sourcefiles.rst'
+* Fix typo in 'recommendedbitnodeorder.rst'
+* Fix 'getServer' documentation missing 'server' argument.
+* Fix missing ram cost in 'getData.rst'
+* Fix basic formulas examples.
+* Fix typo in BN11 description.
+* Fix formatting issue in Bladeburner (@Pimgd)
+
+**Misc.**
+
+* Fix negative money being displayed in full.
+* Fix Hacking Missions not working.
+* Fix Corporation tree not rendering.
+* Fix script being needlessly recompiled. This should save real ram (not game ram)
+* w0r1d_d43m0n can be backdoored
+* Coding Contracts title is click-to-copy (@Rodeth)
+* Covenant memory upgrade works better.
+* Fix Neuroflux not being correctly calculated when entering BN with SF12.
+* Delete Active Script now delete all active scripts, not just home.
+* Now you can 'cd' in directories that only contain '.txt' files.
+* Fix 'analyze' always saying players had root access
+* Passive faction rep no longer builds for special factions.
+* Donation option no longer appears for special factions.
+* Rephrased some milestones.
+* donation textbox now accepts money in the format '1b' and the like (@Dawe)
+* Fix being able to join hated factions simultaneously. (@Dawe)
+* 'ls' now displays files in multiple column. (Helps players with many files)
+* Bladeburner multiplers now appear under Character>Stats and
+  Character>Augmentation when they are relevant.
+* Fix missing functions syntax highlight in codemirror.
+* Fix infiltration number formatting.
+* script income transfers to parent on death. This helps keep track of
+  income for scripts that spawn short lived scripts.
+
+v0.51.7 - 2021-04-28 n00dles
+----------------------------
+
+**Tutorial servers**
+
+* All the tutorial servers have been reverted to their original value
+* The new server n00dles has been added as tutorial server.
+
+**Terminal**
+
+* 'tail' now accepts Pid.
+* 'analyze' now handles Hacknet Servers correctly.
+* 'ServerProfiler.exe' now handles Hacknet Servers correctly.
+
+**SF12**
+
+* Now makes you start with Neuroflux Governor equal to the level of the SF.
+
+**Netscript**
+
+* Deprecated 'getServerRam'.
+* 'getServerMaxRam' added to replace 'getServerRam'
+* 'getServerUsedRam' added to replace 'getServerRam'
+* 'getBitnodeMultipliers' is available inside BN5
+* Time logged by hack/grow/weaken now displays in human time.
+* thread count logged by hack/grow/weaken now displays with commas every
+  thousands place.
+
+**Donation**
+
+* Always visible but locked until favor requirements are reached.
+
+**Augmentations**
+
+* City factions has been rebalanced to give a reason to visit them all.
+
+**Sleeves**
+
+* Fix sleeves not being able to work at Volhavens gym.
+
+**Lint**
+
+* This shouldn't change anything but was like 10h of work. So I'm logging it.
+
+**Misc.**
+
+* Plethora of typo fixed (@Pimgd)
+* ps documentation fix (@Dawe)
+* The dev menu now has a quick bitflume option.
+* Fix SF -1 not being as powerful as intended.
+* Fix cashroot starter kit not displaying correctly.
+* Fix DOM element 'character-overview-text' being nested twice.
+* Hacknet documentation example fix.
+* Money amount under 1000 dont display 3 decimal anymore.
+* Fix nextSourceFile flag miscalculation on the bitverse (for Bn12)
+* Faction invite text says "Decide later"/"Join!" instead of "No"/"Yes"
+
+
+v0.51.6 - 2021-04-28 Backdoor! (Community)
+------------------------------------------
+
+**Backdoor**
+
+* a new terminal command, backdoor, has been added to help differentiate
+  between the terminal hack command and the netscript hack function. (@dewint)
+
+**Servers**
+
+* foodnstuff, sigma-cosmetics, and joesguns have been rebalanced to help new players.
+
+**Milestones**
+
+* A new tab under the Help menu has been added to guide players through the
+  game.
+
+**Casino**
+
+* Blackjack has been added (@BigD)
+
+**Netscript**
+
+* 'prompt' now converts input to JSON.
+* 'getRunningScript' is a new netscript function that returns a bunch of
+  data related to a running script.
+
+**Coding contracts**
+
+* trivial puzzles should no longer appear.
+
+**Infiltration**
+
+* All numbers are formatted like the rest of the game.
+
+**Misc.**
+
+* Server security is capped at 100.
+* Added option to quit a job.
+* 'cd' no longer works on unexistent folders.
+* cd with no arguments brings you back to top level folder (@Andreas)
+* 'softReset' documentation udpated.
+* Money tracker now accounts for going to the hospital manually.
+* codemirror is now the default editor (for new save files)
+* fix typo in dark web help text (@Rodeth)
+* so many documentation and typos fixes (@Pimgd)
+* A corruption visual effect has been added to location with servers that
+  have backdoor installed. (@dewint)
+
+
+v0.51.5 - 2021-04-20 Flags! (hydroflame)
+----------------------------------------
+
+**Netscript**
+
+* 'flags' is a new function that helps script handle flags.
+  This is subject to change if it doesn't meet the need of the players.
+* 'ps' now returns the pid.
+* 'tail' now works with pid as first argument.
+* 'tail' hostname defaults to current server. (like the documentation says)
+* 'isRunning' hostname defaults to current server.
+* 'isRunning' now works with pid as first argument.
+
+**Gang**
+
+* Nerfed ascension mechanic once again :(
+
+**Misc.**
+
+* Souce-File typo fix
+* Fix 'while you were away' screen.
+* Bladeburner team size can no longer be set to negative amounts.
+
+v0.51.4 - 2021-04-19 Manual hacking is fun (hydroflame)
+-------------------------------------------------------
+
+**Manual hacking**
+
+* These bonus require an install or a soft reset to take effect.
+* Manual hacking gyms and university gives you a 10% discount.
+* Manual hacking a corporation server decreases the penalty for leaving work
+  early.
+
+**BladeBurner**
+
+* nerfed int exp gained.
+
+**Documentation**
+
+* purchaseServer specifies what happens on failure.
+* Fixed typo in recommended bitnode page.
+* Removed misleading ram requirements for hacking factions.
+
+**Netscript**
+
+* growthAnalyze handles Infinity correctly.
+
+**Misc.**
+
+* Faction Augmentation will list how much reputation is required even after
+  that goal has been reached.
+* Removed dollar sign in travel agency confirmation dialog box.
+* Fixed typo in alpha-omega.lit
+* the 'Game saved!' text no longer blocks the save game/options button.
+* The text editor now remembers the location of your cursor and restores it.
+* skills are recalculated instantly.
+* Fix typo in Operation Zero description.
+
+v0.51.3 - 2021-04-16 Y'all broke it on the first day (hydroflame)
+-----------------------------------------------------------------
+
+**Passive faction reputation**
+
+* Reworked, from 1 rep / 2 minute. Now is a complicated percentage of the
+  reputation you'd gain working for them. It's not op but it feels a bit
+  more useful.
+
+**Netscript**
+
+* print/tprint now take any number of arguments.
+* print/tprint will now print object as json.
+* print/tprint now handle passing in an undefined argument properly.
+
+**Casino**
+
+* Cannot bet negative money anymore.
+* Roulette max bet is a bit higher.
+* Coin Flip has a small cooldown.
+* All buttons reject unstrusted mouse events.
+
+**Documentation**
+
+* Changed a message that said nsjs only works on Chrome.
+
+**Bugfix**
+
+* hacknet.maxNumNodes now works for both nodes and servers.
+* Fixed a bug where the popup boxes would contain data from previous popup boxes.
+* .js files will also have the 'export async function' boilerplate.
+
+**Misc.**
+
+* turned off web form autocomplete for the terminal text input.
+* Fixed an issue on Windows+Firefox where pressing up on the terminal would
+  bring the cursor to the begining of the line. (Issue #836)
+* Hacknet node names is easier to handle for screen readers.
+* Money spent on classes is now tracked independently of work money.
+* running coding contract from the terminal will display its name.
+
+v0.51.2 - 2021-04-09 Vegas, Baby! (hydroflame)
+----------------------------------------------
+
+**New location: The Iker Molina Casino**
+
+* A casino opened in Aevum. However the house is rumored to cheat. If only 
+  we could give them a taste of their own medicine.
+
+**Misc.**
+
+* Link to discord added under options
+* 'getMemberInformation' doc updated, oops
+* tech vendor now handle max ram and cores.
+
+v0.51.1 - 2021-04-06 Bugfixes because the author of the last patch sucks (it's hydroflame)
+------------------------------------------------------------------------------------------
+
+**Netscript**
+
+* 'getPlayer' returns players faction and tor
+* 'hospitalization' is a new singularity function.
+* 'gang.getMemberInformation' now returns more information.
+* 'hacknet.hashCapacity' is a new hacknet function that returns the maximum hash capacity.
+
+**Hospitalization**
+
+* Now only cost at most 10% of your money.
+
+**Bugfix**
+
+* confirmation dialog box no longer use previous text
+
+**Accessibility**
+
+* The game is a little easier to handle for screen readers (yes, there's an
+  absolute legend playing this game with a screen reader)
+* Infiltration use buttons instead of a-links
+* New option to disable ASCII art. This will make the metro map and world
+  map display as a list of buttons.
+
+**Misc.**
+
+* 'fl1ght.exe' will no longer suggest the combat path. Related faction
+  requirements unchanged.
+
+v0.51.0 - 2021-03-31 Formulas (hydroflame)
+------------------------------------------
+
+**Formulas API**
+
+* A new API is introduced, this gives players access to various formulas used in the game.
+  It'll help you make more informed decisions.
+
+**Netscript**
+
+* 'getServer' is a new function meant to be used with the formulas API.
+* 'getPlayer' is a new function meant to be used with the formulas API.
+* 'getStats' and 'getCharacterInformation' are deprecated in favor of 'getPlayer'
+* 'getCurrentServer' is a new function that returns the server the player is currently connected.
+
+**Display**
+
+* All money should now consistently be orange.
+* All rep should now consistently be light-yellow.
+* Most numbers should display consistently now (aka all money is formatted the same).
+
+**Click to copy**
+
+* Certain UI elements are now 'click-to-copy'
+
+v0.50.2 - 2021-03-25 Everyone asked for this one. (hydroflame)
+--------------------------------------------------------------
+
+**BitNodeMultipliers**
+
+* 'GangKarmaRequirements': a new multipler that influences how much karma is required to make a gang different bitnodes.
+
+**Netscript**
+
+* 'connect': a new singularity function that connects you to a server. (like the terminal command)
+* 'manualHack': a new singularity function that performs a manual hack on the players current server.
+* ns2 stack trace works on Firefox now.
+
+**Misc.**
+
+* New shortcut, Alt + b, brings you to bladeburner
+* New shortcut, Alt + g, brings you to gang
+
+v0.50.1 - 2021-03-22 (hydroflame)
+---------------------------------
+**Netscript**
+
+* getTaskStats works
+
+**Source-File -1**
+
+* Added a new Exploit
+
+**Factions**
+
+* Augmentations offered by a Faction but already bought are in a separate list at the bottom of the page.
+
+**Bug fixed**
+
+* Fixed a bug where completing a maxed non-repeatable BitNode would make its color on the BitVerse like level 1.
+
+**Misc.**
+
+* Minor spacing in stats tables.
+
+v0.50.0 - 2021-03-20 Intelligence (hydroflame)
+----------------------------------------------
+
+**Intelligence**
+
+* int exp gain and effect has been reworked. It is now much more easy to
+  acquire and far more powerful. The goal here is to feel like players have
+  another tool in their arsenal.
+
+**Factions**
+
+* Hacking factions no longer have hacking level requirements since their associated servers do.
+
+**Misc.**
+
+* Sleeve styling.
+* number formatting
+* remove wiki button in Hacking Missions.
+* Fix NaN displayed when very very large numbers are reached.
+
+v0.49.2 - 2021-03-13 (hydroflame)
+---------------------------------
+
+**BN8**
+
+* A new bitnode multipler has been added, it lets you reduce money from a
+  server without gaining actually any money. This is important for BN8 where
+  hack/grow can influence the stock market. No money can be gained from
+  hacking but server money can still be reduced.
+
+**Documentation**
+
+* readthedocs should now be more consistent and many examples were added.
+
+**Netscript**
+
+* Ace editor will now correctly highlight all functions.
+* 'tFormat' is a new netscript function that returns a human readable
+  representation of milliseconds. eg. "2 hours 15 minute 43 seconds"
+
+**Gang**
+
+* style improvements
+
+**Bladeburner**
+
+* style improvements
+* fix bug where 'skill list SKILL' would crash if skill is level 0.
+
+**Sleeve**
+
+* karma gain now scales with sync.
+
+**Misc.**
+
+* Fix issue where the effective stats under Character>Stats were being calculated.
+
+v0.49.0 - 2021-03-11 Source-File -1 (hydroflame)
+------------------------------------------------
+
+**Source-File -1**
+
+* For advanced players: The game now embraces exploits and will reward
+  players for doing so.
+
+**Gang**
+
+* ascension is less effective as the ascension multiplier goes up.
+* territory gain scales with power difference.
+
+**Netscript**
+
+* 'gang.getEquipmentStats' returns the stats of the equipment.
+* 'gang.getTaskStats' returns the stats of a task.
+* 'getCrimeStats' returns the stats of a crime.
+* Crashes should now print the ns stack trace.
+* Log messages are now more consistent.
+* 'softReset' now accepts a callback script like 'installAugmentations'
+
+**Misc.**
+
+* Minor formatting under Hacking>Active Scripts
+* option menu colors now match the rest of the game, kinda.
+
+
+v0.48.0 - ASCII - 2021-03-07 (hydroflame)
+-----------------------------------------
+
+**ASCII**
+
+* Travel Agency now displays a world map
+* Cities are now top view of metro station maps
+
+**Netscript**
+
+* 'softReset' is a new netscript function that performs a soft reset
+    regardless of if the player has bought augmentations or not.
+* 'getAugmentationStats' is a new netscript function that returns the stats of
+    an augmentation.
+* getCharacterInformation now additionally returns exp
+* pid resets back to 1 when installing or destroying a BitNode.
+* New '.ns' scripts start with a main function.
+* 'hacknet.maxNumNodes' returns the maximum number of hacknet nodes.
+
+**Bladeburner**
+
+* Current stamina will scale as max stamina increases, this prevents players
+    from having very high penalty when they gain huge amount of exp at the 
+    start of a reset.
+
+**Misc.**
+
+* Fixed an issue where SF3 was listed as infinitly repeatable and SF12 as
+    having a limit of 3.
+* Fixed an issue where the gang equipment screen would freeze the game if a 
+    script installed augmentations while it is open.
+* All BonusTime now displays in the 'H M S' format.
+* Donation textbox style updated to match the rest of the game.
+* Corporation name style updated to match the rest of the game.
+* minor formatting under Hacking>Active Scripts
+* typo in BN12 description
+* BN12 now reduces contract money
+* Character>Stats percentages are aligned, server and hacknet limit are
+    displayed, if the player has SF5 the reduces stats are shown.
+* Character>Augmentations now displays by how much the player stats will
+    increase.
+* Character>Augmentations has a badge indicating how many augs the player
+    has bought but not installed
+* Character>Factions has a badge indicating how many factions have pending
+    invites.
+
 v0.47.2 - 7/15/2019
 -------------------
 
@@ -30,7 +535,7 @@ v0.47.2 - 7/15/2019
 * Added 'Solarized Dark' theme to CodeMirror editor
 * After Infiltration, you will now return to the company page rather than the city page
 * Bug fix: Stock Market UI should no longer crash for certain locale settings
-* Bug fix: You can now properly remove unfinished programs (the *.exe-N%-INC files)
+* Bug fix: You can now properly remove unfinished programs (the `*.exe-N%-INC` files)
 * Bug fix: Fixed an issue that allowed you to increase money on servers with a 'maxMoney' of 0 (like CSEC)
 * Bug fix: Scripts no longer persist if they were started with syntax/import errors
 * Bug fix: 'hack' and 'analyze' Terminal commands are now blocking

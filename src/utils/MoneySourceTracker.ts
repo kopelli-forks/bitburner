@@ -5,27 +5,23 @@
 import { Generic_fromJSON, Generic_toJSON, Reviver } from "../../utils/JSONReviver";
 
 export class MoneySourceTracker {
-    // Initiatizes a MoneySourceTracker object from a JSON save state.
-    static fromJSON(value: any): MoneySourceTracker {
-        return Generic_fromJSON(MoneySourceTracker, value.data);
-    }
-
-    bladeburner: number = 0;
-    codingcontract: number = 0;
-    corporation: number = 0;
-    crime: number = 0;
-    gang: number = 0;
-    hacking: number = 0;
-    hacknetnode: number = 0;
-    hospitalization: number = 0;
-    infiltration: number = 0;
-    stock: number = 0;
-    total: number = 0;
-    work: number = 0;
-
+    // eslint-disable-next-line @typescript-eslint/ban-types
     [key: string]: number | Function;
-
-    constructor() {}
+    
+    bladeburner = 0;
+    casino = 0;
+    class = 0;
+    codingcontract = 0;
+    corporation = 0;
+    crime = 0;
+    gang = 0;
+    hacking = 0;
+    hacknetnode = 0;
+    hospitalization = 0;
+    infiltration = 0;
+    stock = 0;
+    total = 0;
+    work = 0;
 
     // Record money earned
     record(amt: number, source: string): void {
@@ -43,7 +39,7 @@ export class MoneySourceTracker {
     reset(): void {
         for (const prop in this) {
             if (typeof this[prop] === "number") {
-                this[prop] = 0;
+                (this[prop] as number) = 0;
             }
         }
     }
@@ -51,6 +47,12 @@ export class MoneySourceTracker {
     // Serialize the current object to a JSON save state.
     toJSON(): any {
         return Generic_toJSON("MoneySourceTracker", this);
+    }
+
+    // Initiatizes a MoneySourceTracker object from a JSON save state.
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    static fromJSON(value: any): MoneySourceTracker {
+        return Generic_fromJSON(MoneySourceTracker, value.data);
     }
 }
 

@@ -3,6 +3,8 @@ purchaseSleeveAug() Netscript Function
 
 .. js:function:: purchaseSleeveAug(sleeveNumber, augName)
 
+    :RAM cost: 4 GB
+
     :param int sleeveNumber: Index of the sleeve to buy an aug for. See :ref:`here <netscript_sleeveapi_referencingaduplicatesleeve>`
     :param string augName: Name of the aug to buy. Must be an exact match
 

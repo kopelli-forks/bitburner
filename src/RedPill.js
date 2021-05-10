@@ -16,7 +16,7 @@ import {
     yesNoBoxCreate,
     yesNoBoxGetYesButton,
     yesNoBoxGetNoButton,
-    yesNoBoxClose
+    yesNoBoxClose,
 } from "../utils/YesNoBox";
 import { clearEventListeners } from "../utils/uiHelpers/clearEventListeners";
 import { removeChildrenFromElement } from "../utils/uiHelpers/removeChildrenFromElement";
@@ -58,13 +58,17 @@ function writeRedPillLetter(pElem, line, i=0) {
 }
 
 let redPillFlag = false;
-function hackWorldDaemon(currentNodeNumber, flume=false) {
+function hackWorldDaemon(currentNodeNumber, flume=false, quick=false) {
     // Clear Red Pill screen first
     var container = document.getElementById("red-pill-content");
     removeChildrenFromElement(container);
 
     redPillFlag = true;
     Engine.loadRedPillContent();
+
+    if(quick) {
+        return loadBitVerse(currentNodeNumber, flume, quick);
+    }
     return writeRedPillLine("[ERROR] SEMPOOL INVALID").then(function() {
         return writeRedPillLine("[ERROR] Segmentation Fault");
     }).then(function() {
@@ -96,7 +100,7 @@ function hackWorldDaemon(currentNodeNumber, flume=false) {
     }).then(function() {
         return loadBitVerse(currentNodeNumber, flume);
     }).catch(function(e){
-        console.log("ERROR: " + e.toString());
+        console.error(e.toString());
     });
 }
 
@@ -104,7 +108,7 @@ function giveSourceFile(bitNodeNumber) {
     var sourceFileKey = "SourceFile"+ bitNodeNumber.toString();
     var sourceFile = SourceFiles[sourceFileKey];
     if (sourceFile == null) {
-        console.log("ERROR: could not find source file for Bit node: " + bitNodeNumber);
+        console.error(`Could not find source file for Bit node: ${bitNodeNumber}`);
         return;
     }
 
@@ -143,7 +147,7 @@ function giveSourceFile(bitNodeNumber) {
 // is destroyed. Updated every time loadBitVerse() is called
 let nextSourceFileFlags = [];
 
-function loadBitVerse(destroyedBitNodeNum, flume=false) {
+function loadBitVerse(destroyedBitNodeNum, flume=false, quick=false) {
     // Clear the screen
     const container = document.getElementById("red-pill-content");
     removeChildrenFromElement(container);
@@ -151,7 +155,8 @@ function loadBitVerse(destroyedBitNodeNum, flume=false) {
     // Update NextSourceFileFlags
     nextSourceFileFlags = SourceFileFlags.slice();
     if (!flume) {
-        ++nextSourceFileFlags[destroyedBitNodeNum];
+        if (nextSourceFileFlags[destroyedBitNodeNum] < 3)
+            ++nextSourceFileFlags[destroyedBitNodeNum];
     }
 
     // Create the Bit Verse
@@ -220,6 +225,10 @@ function loadBitVerse(destroyedBitNodeNum, flume=false) {
         }(i)); // Immediate invocation closure
     }
 
+    if(quick) {
+        return Promise.resolve(true);
+    }
+
     // Create lore text
     return writeRedPillLine("Many decades ago, a humanoid extraterrestial species which we call the Enders descended on the Earth...violently").then(function() {
         return writeRedPillLine("Our species fought back, but it was futile. The Enders had technology far beyond our own...");
@@ -264,7 +273,7 @@ function loadBitVerse(destroyedBitNodeNum, flume=false) {
     }).then(function() {
         return Promise.resolve(true);
     }).catch(function(e){
-        console.log("ERROR: " + e.toString());
+        console.error(e.toString());
     });
 }
 
@@ -298,9 +307,9 @@ function createBitNodeYesNoEventListener(newBitNode, destroyedBitNode, flume=fal
         if (!flume) {
             giveSourceFile(destroyedBitNode);
         } else {
-            // If player used flume, subtract 5 int exp. The prestigeSourceFile()
-            // function below grants 5 int exp, so this allows sets net gain to 0
-            Player.gainIntelligenceExp(-5);
+            // If player used flume, subtract 300 int exp. The prestigeSourceFile()
+            // function below grants 300 int exp, so this allows sets net gain to 0
+            Player.gainIntelligenceExp(-300);
         }
         redPillFlag = false;
         var container = document.getElementById("red-pill-content");
@@ -308,15 +317,12 @@ function createBitNodeYesNoEventListener(newBitNode, destroyedBitNode, flume=fal
 
         // Set new Bit Node
         Player.bitNodeN = newBitNode;
-        console.log(`Entering Bit Node ${Player.bitNodeN}`);
 
         // Reenable terminal
         $("#hack-progress-bar").attr('id', "old-hack-progress-bar");
         $("#hack-progress").attr('id', "old-hack-progress");
         document.getElementById("terminal-input-td").innerHTML = '$ <input type="text" id="terminal-input-text-box" class="terminal-input" tabindex="1"/>';
         $('input[class=terminal-input]').prop('disabled', false);
-
-        Terminal.hackFlag = false;
 
         prestigeSourceFile();
         yesNoBoxClose();

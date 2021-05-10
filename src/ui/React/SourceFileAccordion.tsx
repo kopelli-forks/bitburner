@@ -11,12 +11,12 @@ import { Accordion } from "./Accordion";
 import { SourceFile } from "../../SourceFile/SourceFile";
 
 type IProps = {
-    level: number,
-    sf: SourceFile,
+    level: number;
+    sf: SourceFile;
 }
 
 export function SourceFileAccordion(props: IProps): React.ReactElement {
-    const maxLevel = props.sf.n === 3 ? "∞" : "3";
+    const maxLevel = props.sf.n === 12 ? "∞" : "3";
 
     return (
         <Accordion

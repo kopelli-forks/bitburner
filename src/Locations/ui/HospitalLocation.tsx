@@ -5,11 +5,11 @@
  */
 import * as React from "react";
 
-import { CONSTANTS }                from "../../Constants";
 import { IPlayer }                  from "../../PersonObjects/IPlayer";
+import { getHospitalizationCost }   from "../../Hospital/Hospital";
 
-import { numeralWrapper }           from "../../ui/numeralFormat";
 import { AutoupdatingStdButton }    from "../../ui/React/AutoupdatingStdButton";
+import { Money }                    from "../../ui/React/Money";
 
 import { dialogBoxCreate }          from "../../../utils/DialogBox";
 
@@ -25,7 +25,7 @@ export class HospitalLocation extends React.Component<IProps, IState> {
     /**
      * Stores button styling that sets them all to block display
      */
-    btnStyle: object;
+    btnStyle: any;
 
     constructor(props: IProps) {
         super(props);
@@ -41,7 +41,7 @@ export class HospitalLocation extends React.Component<IProps, IState> {
     }
 
     getCost(): number {
-        return (this.props.p.max_hp - this.props.p.hp) * CONSTANTS.HospitalCostPerHp;
+        return getHospitalizationCost(this.props.p);
     }
 
     getHealed(e: React.MouseEvent<HTMLElement>): void {
@@ -53,23 +53,24 @@ export class HospitalLocation extends React.Component<IProps, IState> {
         const cost = this.getCost();
         this.props.p.loseMoney(cost);
         this.props.p.hp = this.props.p.max_hp;
+        this.props.p.recordMoneySource(-1 * cost, 'hospitalization');
 
         // This just forces a re-render to update the cost
         this.setState({
             currHp: this.props.p.hp,
         });
 
-        dialogBoxCreate(`You were healed to full health! The hospital billed you for ${numeralWrapper.formatMoney(cost)}`);
+        dialogBoxCreate(<>You were healed to full health! The hospital billed you for {Money(cost)}</>);
     }
 
-    render() {
+    render(): React.ReactNode {
         const cost = this.getCost();
 
         return (
             <AutoupdatingStdButton
                 onClick={this.getHealed}
                 style={this.btnStyle}
-                text={`Get treatment for wounds - ${numeralWrapper.formatMoney(cost)}`}
+                text={<>Get treatment for wounds - {Money(cost)}</>}
             />
         )
     }

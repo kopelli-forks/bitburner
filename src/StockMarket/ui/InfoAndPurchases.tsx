@@ -7,14 +7,14 @@ import * as React from "react";
 
 import {
     getStockMarket4SDataCost,
-    getStockMarket4STixApiCost
+    getStockMarket4STixApiCost,
 } from "../StockMarketCosts";
 
 import { CONSTANTS } from "../../Constants";
 import { IPlayer } from "../../PersonObjects/IPlayer";
-import { numeralWrapper } from "../../ui/numeralFormat";
 import { StdButton } from "../../ui/React/StdButton";
 import { StdButtonPurchased } from "../../ui/React/StdButtonPurchased";
+import { Money } from "../../ui/React/Money";
 
 import { dialogBoxCreate } from "../../../utils/DialogBox";
 
@@ -39,7 +39,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
         this.purchase4SMarketDataTixApiAccess = this.purchase4SMarketDataTixApiAccess.bind(this);
     }
 
-    handleClick4SMarketDataHelpTip() {
+    handleClick4SMarketDataHelpTip(): void {
         dialogBoxCreate(
             "Access to the 4S Market Data feed will display two additional pieces " +
             "of information about each stock: Price Forecast & Volatility<br><br>" +
@@ -54,11 +54,11 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
             "can change every tick (a tick occurs every few seconds while the game " +
             "is running).<br><br>" +
             "A stock's price forecast can change over time. This is also affected by volatility. " +
-            "The more volatile a stock is, the more its price forecast will change."
+            "The more volatile a stock is, the more its price forecast will change.",
         );
     }
 
-    purchaseWseAccount() {
+    purchaseWseAccount(): void {
         if (this.props.p.hasWseAccount) { return; }
         if (!this.props.p.canAfford(CONSTANTS.WSEAccountCost)) { return; }
         this.props.p.hasWseAccount = true;
@@ -72,7 +72,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
         }
     }
 
-    purchaseTixApiAccess() {
+    purchaseTixApiAccess(): void {
         if (this.props.p.hasTixApiAccess) { return; }
         if (!this.props.p.canAfford(CONSTANTS.TIXAPICost)) { return; }
         this.props.p.hasTixApiAccess = true;
@@ -80,7 +80,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
         this.props.rerender();
     }
 
-    purchase4SMarketData() {
+    purchase4SMarketData(): void {
         if (this.props.p.has4SData) { return; }
         if (!this.props.p.canAfford(getStockMarket4SDataCost())) { return; }
         this.props.p.has4SData = true;
@@ -88,7 +88,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
         this.props.rerender();
     }
 
-    purchase4SMarketDataTixApiAccess() {
+    purchase4SMarketDataTixApiAccess(): void {
         if (this.props.p.has4SDataTixApi) { return; }
         if (!this.props.p.canAfford(getStockMarket4STixApiCost())) { return; }
         this.props.p.has4SDataTixApi = true;
@@ -107,7 +107,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
                 <StdButton
                     disabled={!this.props.p.canAfford(cost)}
                     onClick={this.purchaseWseAccount}
-                    text={`Buy WSE Account - ${numeralWrapper.formatMoney(cost)}`}
+                    text={<>Buy WSE Account - {Money(cost)}</>}
                 />
             )
         }
@@ -125,7 +125,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
                     disabled={!this.props.p.canAfford(cost) || !this.props.p.hasWseAccount}
                     onClick={this.purchaseTixApiAccess}
                     style={blockStyleMarkup}
-                    text={`Buy Trade Information eXchange (TIX) API Access - ${numeralWrapper.formatMoney(cost)}`}
+                    text={<>Buy Trade Information eXchange (TIX) API Access - {Money(cost)}</>}
                 />
             )
         }
@@ -145,7 +145,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
                 <StdButton
                     disabled={!this.props.p.canAfford(cost) || !this.props.p.hasWseAccount}
                     onClick={this.purchase4SMarketData}
-                    text={`Buy 4S Market Data Access - ${numeralWrapper.formatMoney(cost)}`}
+                    text={<>Buy 4S Market Data Access - {Money(cost)}</>}
                     tooltip={"Lets you view additional pricing and volatility information about stocks"}
                 />
             )
@@ -174,14 +174,14 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
                 <StdButton
                     disabled={!this.props.p.canAfford(cost)}
                     onClick={this.purchase4SMarketDataTixApiAccess}
-                    text={`Buy 4S Market Data TIX API Access - ${numeralWrapper.formatMoney(cost)}`}
+                    text={<>Buy 4S Market Data TIX API Access - {Money(cost)}</>}
                     tooltip={"Let you access 4S Market Data through Netscript"}
                 />
             )
         }
     }
 
-    render() {
+    render(): React.ReactNode {
         const documentationLink = "https://bitburner.readthedocs.io/en/latest/basicgameplay/stockmarket.html";
         return (
             <div className={"stock-market-info-and-purchases"}>
@@ -216,7 +216,7 @@ export class InfoAndPurchases extends React.Component<IProps, any> {
                 {this.renderPurchase4SMarketDataTixApiAccessButton()}
                 <p>
                     Commission Fees: Every transaction you make has
-                    a {numeralWrapper.formatMoney(CONSTANTS.StockMarketCommission)} commission fee.
+                    a {Money(CONSTANTS.StockMarketCommission)} commission fee.
                 </p><br />
                 <p>
                     WARNING: When you reset after installing Augmentations, the Stock

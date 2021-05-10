@@ -7,15 +7,15 @@ import { isScriptFilename } from "./ScriptHelpersTS";
 import {CONSTANTS} from "../Constants";
 import {Engine} from "../engine";
 import { parseFconfSettings } from "../Fconf/Fconf";
-import { FconfSettings } from "../Fconf/FconfSettings";
 import {
     iTutorialSteps,
     iTutorialNextStep,
-    ITutorial
+    ITutorial,
 } from "../InteractiveTutorial";
 import { Player } from "../Player";
 import { AceEditor } from "../ScriptEditor/Ace";
 import { CodeMirrorEditor } from "../ScriptEditor/CodeMirror";
+import { CursorPositions } from "../ScriptEditor/CursorPositions";
 import { AllServers } from "../Server/AllServers";
 import { processSingleServerGrowth } from "../Server/ServerHelpers";
 import { Settings } from "../Settings/Settings";
@@ -27,11 +27,6 @@ import { Page, routing } from "../ui/navigationTracking";
 import { numeralWrapper } from "../ui/numeralFormat";
 
 import { dialogBoxCreate } from "../../utils/DialogBox";
-import {
-    Reviver,
-    Generic_toJSON,
-    Generic_fromJSON
-} from "../../utils/JSONReviver";
 import { compareArrays } from "../../utils/helpers/compareArrays";
 import { createElement } from "../../utils/uiHelpers/createElement";
 
@@ -55,12 +50,12 @@ export function scriptEditorInit() {
                 editor.beautifyScript();
             }
             return false;
-        }
+        },
     });
 
     // Text that displays RAM calculation
     scriptEditorRamText = createElement("p", {
-        display:"inline-block", margin:"10px", id:"script-editor-status-text"
+        display:"inline-block", margin:"10px", id:"script-editor-status-text",
     });
 
     // Label for checkbox (defined below)
@@ -69,7 +64,7 @@ export function scriptEditorInit() {
         innerText:"Dynamic RAM Usage Checker", color:"white",
         tooltip:"Enable/Disable the dynamic RAM Usage display. You may " +
                 "want to disable it for very long scripts because there may be " +
-                "performance issues"
+                "performance issues",
     });
 
     // Checkbox for enabling/disabling dynamic RAM calculation
@@ -96,7 +91,7 @@ export function scriptEditorInit() {
         clickListener:()=>{
             saveAndCloseScriptEditor();
             return false;
-        }
+        },
     });
 
     // Add all buttons to the UI
@@ -167,7 +162,6 @@ export function getCurrentEditor() {
         case EditorSetting.CodeMirror:
             return CodeMirrorEditor;
         default:
-            console.log(`Invalid Editor Setting: ${Settings.Editor}`);
             throw new Error(`Invalid Editor Setting: ${Settings.Editor}`);
             return null;
     }
@@ -192,7 +186,7 @@ export async function updateScriptEditorContent() {
     var codeCopy = code.repeat(1);
     var ramUsage = await calculateRamUsage(codeCopy, Player.getCurrentServer().scripts);
     if (ramUsage > 0) {
-        scriptEditorRamText.innerText = "RAM: " + numeralWrapper.format(ramUsage, '0.00') + " GB";
+        scriptEditorRamText.innerText = "RAM: " + numeralWrapper.formatRAM(ramUsage);
     } else {
         switch (ramUsage) {
             case RamCalculationErrorCode.ImportError:
@@ -225,11 +219,13 @@ $(document).keydown(function(e) {
 function saveAndCloseScriptEditor() {
     var filename = document.getElementById("script-editor-filename").value;
 
-    let code;
+    let code, cursor;
     try {
         code = getCurrentEditor().getCode();
+        cursor = getCurrentEditor().getCursor();
+        CursorPositions.saveCursor(filename, cursor);
     } catch(e) {
-        dialogBoxCreate("Something went wrong when trying to save (getCurrentEditor().getCode()). Please report to game developer with details");
+        dialogBoxCreate("Something went wrong when trying to save (getCurrentEditor().getCode() or getCurrentEditor().getCursor()). Please report to game developer with details");
         return;
     }
 
@@ -269,7 +265,7 @@ function saveAndCloseScriptEditor() {
     }
 
     if (filename !== ".fconf" && !isValidFilePath(filename)) {
-        dialogBoxCreate("Script filename can contain only alphanumerics, hyphens, and underscores");
+        dialogBoxCreate("Script filename can contain only alphanumerics, hyphens, and underscores, and must end with an extension.");
         return;
     }
 
@@ -283,7 +279,7 @@ function saveAndCloseScriptEditor() {
         }
     } else if (isScriptFilename(filename)) {
         //If the current script already exists on the server, overwrite it
-        for (var i = 0; i < s.scripts.length; i++) {
+        for (let i = 0; i < s.scripts.length; i++) {
             if (filename == s.scripts[i].filename) {
                 s.scripts[i].saveScript(getCurrentEditor().getCode(), Player.currentServer, Player.getCurrentServer().scripts);
                 Engine.loadTerminalContent();
@@ -296,14 +292,14 @@ function saveAndCloseScriptEditor() {
         script.saveScript(getCurrentEditor().getCode(), Player.currentServer, Player.getCurrentServer().scripts);
         s.scripts.push(script);
     } else if (filename.endsWith(".txt")) {
-        for (var i = 0; i < s.textFiles.length; ++i) {
+        for (let i = 0; i < s.textFiles.length; ++i) {
             if (s.textFiles[i].fn === filename) {
                 s.textFiles[i].write(code);
                 Engine.loadTerminalContent();
                 return;
             }
         }
-        var textFile = new TextFile(filename, code);
+        const textFile = new TextFile(filename, code);
         s.textFiles.push(textFile);
     } else {
         dialogBoxCreate("Invalid filename. Must be either a script (.script) or " +
@@ -334,9 +330,8 @@ export function scriptCalculateOfflineProduction(runningScriptObj) {
             var serv = AllServers[ip];
             if (serv == null) {continue;}
             var timesGrown = Math.round(0.5 * runningScriptObj.dataMap[ip][2] / runningScriptObj.onlineRunningTime * timePassed);
-            console.log(runningScriptObj.filename + " called grow() on " + serv.hostname + " " + timesGrown + " times while offline");
             runningScriptObj.log("Called grow() on " + serv.hostname + " " + timesGrown + " times while offline");
-            var growth = processSingleServerGrowth(serv, timesGrown * 450, Player);
+            var growth = processSingleServerGrowth(serv, timesGrown, Player);
             runningScriptObj.log(serv.hostname + " grown by " + numeralWrapper.format(growth * 100 - 100, '0.000000%') + " from grow() calls made while offline");
         }
     }
@@ -356,7 +351,6 @@ export function scriptCalculateOfflineProduction(runningScriptObj) {
             totalOfflineProduction += production;
             Player.gainMoney(production);
             Player.recordMoneySource(production, "hacking");
-            console.log(runningScriptObj.filename + " generated $" + production + " while offline by hacking " + serv.hostname);
             runningScriptObj.log(runningScriptObj.filename + " generated $" + production + " while offline by hacking " + serv.hostname);
             serv.moneyAvailable -= production;
             if (serv.moneyAvailable < 0) {serv.moneyAvailable = 0;}
@@ -383,7 +377,6 @@ export function scriptCalculateOfflineProduction(runningScriptObj) {
             var serv = AllServers[ip];
             if (serv == null) {continue;}
             var timesHacked = Math.round(0.5 * runningScriptObj.dataMap[ip][1] / runningScriptObj.onlineRunningTime * timePassed);
-            console.log(runningScriptObj.filename + " hacked " + serv.hostname + " " + timesHacked + " times while offline");
             runningScriptObj.log("Hacked " + serv.hostname + " " + timesHacked + " times while offline");
             serv.fortify(CONSTANTS.ServerFortifyAmount * timesHacked);
         }
@@ -396,7 +389,6 @@ export function scriptCalculateOfflineProduction(runningScriptObj) {
             var serv = AllServers[ip];
             if (serv == null) {continue;}
             var timesWeakened = Math.round(0.5 * runningScriptObj.dataMap[ip][3] / runningScriptObj.onlineRunningTime * timePassed);
-            console.log(runningScriptObj.filename + " called weaken() on " + serv.hostname + " " + timesWeakened + " times while offline");
             runningScriptObj.log("Called weaken() on " + serv.hostname + " " + timesWeakened + " times while offline");
             serv.weaken(CONSTANTS.ServerWeakenAmount * timesWeakened);
         }
@@ -411,6 +403,17 @@ export function findRunningScript(filename, args, server) {
     for (var i = 0; i < server.runningScripts.length; ++i) {
         if (server.runningScripts[i].filename === filename &&
             compareArrays(server.runningScripts[i].args, args)) {
+            return server.runningScripts[i];
+        }
+    }
+    return null;
+}
+
+//Returns a RunningScript object matching the pid on the
+//designated server, and false otherwise
+export function findRunningScriptByPid(pid, server) {
+    for (var i = 0; i < server.runningScripts.length; ++i) {
+        if (server.runningScripts[i].pid === pid) {
             return server.runningScripts[i];
         }
     }

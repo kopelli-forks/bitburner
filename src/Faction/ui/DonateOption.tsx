@@ -7,21 +7,26 @@ import { CONSTANTS } from "../../Constants";
 import { Faction } from "../../Faction/Faction";
 import { IPlayer } from "../../PersonObjects/IPlayer";
 
-import { numeralWrapper } from "../../ui/numeralFormat";
+import { Money } from "../../ui/React/Money";
+import { Reputation } from "../../ui/React/Reputation";
 
 import { StdButton } from "../../ui/React/StdButton";
+
+import { numeralWrapper } from "../../ui/numeralFormat";
 
 import { dialogBoxCreate } from "../../../utils/DialogBox";
 
 type IProps = {
     faction: Faction;
+    disabled: boolean;
+    favorToDonate: number;
     p: IPlayer;
     rerender: () => void;
 }
 
 type IState = {
     donateAmt: number;
-    statusTxt: string;
+    status: JSX.Element;
 }
 
 const inputStyleMarkup = {
@@ -30,14 +35,15 @@ const inputStyleMarkup = {
 
 export class DonateOption extends React.Component<IProps, IState> {
     // Style markup for block elements. Stored as property
-    blockStyle: object = { display: "block" };
+    blockStyle: any = { display: "block" };
 
     constructor(props: IProps) {
         super(props);
 
+
         this.state = {
             donateAmt: 0,
-            statusTxt: "",
+            status: props.disabled ? <>Unlocked at {props.favorToDonate} favor with {props.faction.name}</> : <></>,
         }
 
         this.calculateRepGain = this.calculateRepGain.bind(this);
@@ -61,39 +67,47 @@ export class DonateOption extends React.Component<IProps, IState> {
             this.props.p.loseMoney(amt);
             const repGain = this.calculateRepGain(amt);
             this.props.faction.playerReputation += repGain;
-            dialogBoxCreate(`You just donated ${numeralWrapper.formatMoney(amt)} to ${fac.name} to gain ` +
-                            `${numeralWrapper.format(repGain, "0,0.000")} reputation`);
+            dialogBoxCreate(<>
+                You just donated {Money(amt)} to {fac.name} to gain {Reputation(repGain)} reputation
+            </>);
             this.props.rerender();
         }
     }
 
     handleChange(e: React.ChangeEvent<HTMLInputElement>): void {
-        const amt = parseFloat(e.target.value);
+        const amt = numeralWrapper.parseMoney(e.target.value);
 
         if (isNaN(amt)) {
             this.setState({
                 donateAmt: 0,
-                statusTxt: "Invalid donate amount entered!",
+                status: <>Invalid donate amount entered!</>,
             });
         } else {
             const repGain = this.calculateRepGain(amt);
             this.setState({
                 donateAmt: amt,
-                statusTxt: `This donation will result in ${numeralWrapper.format(repGain, "0,0.000")} reputation gain`,
+                status: <>This donation will result in {Reputation(repGain)} reputation gain</>,
             });
         }
     }
 
-    render() {
+    render(): React.ReactNode {
         return (
             <div className={"faction-work-div"}>
                 <div className={"faction-work-div-wrapper"}>
-                    <input onChange={this.handleChange} placeholder={"Donation amount"} style={inputStyleMarkup} />
+                    <input
+                        className="text-input"
+                        onChange={this.handleChange}
+                        placeholder={"Donation amount"}
+                        style={inputStyleMarkup}
+                        disabled={this.props.disabled}
+                    />
                     <StdButton
                         onClick={this.donate}
                         text={"Donate Money"}
+                        disabled={this.props.disabled}
                     />
-                    <p style={this.blockStyle}>{this.state.statusTxt}</p>
+                    <p style={this.blockStyle}>{this.state.status}</p>
                 </div>
             </div>
         )

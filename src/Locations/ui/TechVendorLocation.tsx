@@ -15,9 +15,9 @@ import { CONSTANTS }                    from "../../Constants";
 import { IPlayer }                      from "../../PersonObjects/IPlayer";
 import { getPurchaseServerCost }        from "../../Server/ServerPurchases";
 
-import { numeralWrapper }               from "../../ui/numeralFormat";
 import { StdButtonPurchased }           from "../../ui/React/StdButtonPurchased";
 import { StdButton }                    from "../../ui/React/StdButton";
+import { Money }                        from "../../ui/React/Money";
 
 type IProps = {
     loc: Location;
@@ -28,7 +28,7 @@ export class TechVendorLocation extends React.Component<IProps, any> {
     /**
      * Stores button styling that sets them all to block display
      */
-    btnStyle: object;
+    btnStyle: any;
 
     constructor(props: IProps) {
         super(props);
@@ -44,22 +44,22 @@ export class TechVendorLocation extends React.Component<IProps, any> {
         this.purchaseTorRouter = this.purchaseTorRouter.bind(this);
     }
 
-    createUpgradeHomeCoresPopup() {
+    createUpgradeHomeCoresPopup(): void {
         createUpgradeHomeCoresPopup(this.props.p);
     }
 
-    createUpgradeHomeRamPopup() {
+    createUpgradeHomeRamPopup(): void {
         createUpgradeHomeRamPopup(this.props.p);
     }
 
-    purchaseTorRouter() {
+    purchaseTorRouter(): void {
         purchaseTorRouter(this.props.p);
         this.setState({
             torPurchased: this.props.p.hasTorRouter(),
         });
     }
 
-    render() {
+    render(): React.ReactNode {
         const loc: Location = this.props.loc;
 
         const purchaseServerButtons: React.ReactNode[] = [];
@@ -70,8 +70,8 @@ export class TechVendorLocation extends React.Component<IProps, any> {
                     key={i}
                     onClick={() => createPurchaseServerPopup(i, this.props.p)}
                     style={this.btnStyle}
-                    text={`Purchase ${i}GB Server - ${numeralWrapper.formatMoney(cost)}`}
-                />
+                    text={<>Purchase {i}GB Server - {Money(cost)}</>}
+                />,
             )
         }
 
@@ -88,7 +88,7 @@ export class TechVendorLocation extends React.Component<IProps, any> {
                         <StdButton
                             onClick={this.purchaseTorRouter}
                             style={this.btnStyle}
-                            text={`Purchase TOR Router - ${numeralWrapper.formatMoney(CONSTANTS.TorRouterCost)}`}
+                            text={<>Purchase TOR Router - {Money(CONSTANTS.TorRouterCost)}</>}
                         />
                     )
 

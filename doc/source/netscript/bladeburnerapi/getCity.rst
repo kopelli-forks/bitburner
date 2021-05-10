@@ -3,4 +3,11 @@ getCity() Netscript Function
 
 .. js:function:: getCity()
 
-    Returns the city that the player is currently in (for Bladeburner).
+    :RAM cost: 4 GB
+    :returns: City that the player is currently in (for Bladeburner).
+
+    Example:
+
+    .. code-block:: javascript
+
+        bladeburner.getCity(); // returns: "Sector-12"

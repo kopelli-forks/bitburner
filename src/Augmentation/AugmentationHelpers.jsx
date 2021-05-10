@@ -8,29 +8,14 @@ import { AugmentationsRoot } from "./ui/Root";
 import { BitNodeMultipliers } from "../BitNode/BitNodeMultipliers";
 import { CONSTANTS } from "../Constants";
 import { Factions, factionExists } from "../Faction/Factions";
-import { startWorkerScript } from "../NetscriptWorker";
 import { Player } from "../Player";
 import { prestigeAugmentation } from "../Prestige";
 import { saveObject } from "../SaveObject";
-import { RunningScript } from "../Script/RunningScript";
-import { Script } from "../Script/Script";
-import { Server } from "../Server/Server";
-import { OwnedAugmentationsOrderSetting } from "../Settings/SettingEnums";
-import { Settings } from "../Settings/Settings";
 import { Page, routing } from "../ui/navigationTracking";
 
 import { dialogBoxCreate } from "../../utils/DialogBox";
-import { createAccordionElement } from "../../utils/uiHelpers/createAccordionElement";
-import {
-    Reviver,
-    Generic_toJSON,
-    Generic_fromJSON
-} from "../../utils/JSONReviver";
-import { formatNumber } from "../../utils/StringHelperFunctions";
 import { clearObject } from "../../utils/helpers/clearObject";
-import { createElement } from "../../utils/uiHelpers/createElement";
-import { isString } from "../../utils/helpers/isString";
-import { removeChildrenFromElement } from "../../utils/uiHelpers/removeChildrenFromElement";
+import { Money } from "../ui/React/Money";
 
 import React from "react";
 import ReactDOM from "react-dom";
@@ -75,7 +60,7 @@ function initAugmentations() {
              "This augmentation increases the player's dexterity by 10%.",
         dexterity_mult: 1.1,
     });
-    Targeting1.addToFactions(["Slum Snakes", "The Dark Army", "The Syndicate", "Sector-12", "Volhaven", "Ishima",
+    Targeting1.addToFactions(["Slum Snakes", "The Dark Army", "The Syndicate", "Sector-12", "Ishima",
                             "OmniTek Incorporated", "KuaiGong International", "Blade Industries"]);
     if (augmentationExists(AugmentationNames.Targeting1)) {
         delete Augmentations[AugmentationNames.Targeting1];
@@ -90,7 +75,7 @@ function initAugmentations() {
         prereqs:[AugmentationNames.Targeting1],
         dexterity_mult: 1.2,
     });
-    Targeting2.addToFactions(["The Dark Army", "The Syndicate", "Sector-12", "Volhaven", "Ishima",
+    Targeting2.addToFactions(["The Dark Army", "The Syndicate", "Sector-12",
                              "OmniTek Incorporated", "KuaiGong International", "Blade Industries"]);
     if (augmentationExists(AugmentationNames.Targeting2)) {
         delete Augmentations[AugmentationNames.Targeting2];
@@ -151,7 +136,7 @@ function initAugmentations() {
         strength_mult: 1.1,
         defense_mult: 1.1,
     });
-    CombatRib1.addToFactions(["Slum Snakes", "The Dark Army", "The Syndicate", "Sector-12", "Volhaven", "Ishima",
+    CombatRib1.addToFactions(["Slum Snakes", "The Dark Army", "The Syndicate", "Volhaven", "Ishima",
                              "OmniTek Incorporated", "KuaiGong International", "Blade Industries"]);
     if (augmentationExists(AugmentationNames.CombatRib1)) {
         delete Augmentations[AugmentationNames.CombatRib1];
@@ -167,7 +152,7 @@ function initAugmentations() {
         strength_mult: 1.14,
         defense_mult: 1.14,
     });
-    CombatRib2.addToFactions(["The Dark Army", "The Syndicate", "Sector-12", "Volhaven", "Ishima",
+    CombatRib2.addToFactions(["The Dark Army", "The Syndicate", "Volhaven",
                              "OmniTek Incorporated", "KuaiGong International", "Blade Industries"]);
     if (augmentationExists(AugmentationNames.CombatRib2)) {
         delete Augmentations[AugmentationNames.CombatRib2];
@@ -177,7 +162,7 @@ function initAugmentations() {
     const CombatRib3 = new Augmentation({
         name:AugmentationNames.CombatRib3, repCost:14e3, moneyCost:24e6,
         info:"This is an upgrade to the Combat Rib II augmentation, and is capable of releasing even more potent combat-enhancing " +
-             "drugs into the bloodstream<br><br>." +
+             "drugs into the bloodstream.<br><br>" +
              "This augmentation increases the player's strength and defense by 18%.",
         prereqs:[AugmentationNames.CombatRib2],
         strength_mult: 1.18,
@@ -403,7 +388,7 @@ function initAugmentations() {
         info:"The body is injected with a chemical that artificially induces synaptic potentiation, " +
              "otherwise known as the strengthening of synapses. This results in a enhanced cognitive abilities.<br><br>" +
              "This augmentation:<br>" +
-             "Increases the player's hacking speed by 2% <br>" +
+             "Increases the player's hacking speed by 2%.<br>" +
              "Increases the player's hacking chance by 5%.<br>" +
              "Increases the player's hacking experience gain rate by 5%.",
         hacking_speed_mult: 1.02,
@@ -443,7 +428,7 @@ function initAugmentations() {
              "This augmentation increases the player's hacking speed by 3%.",
         hacking_speed_mult: 1.03,
     });
-    SynapticEnhancement.addToFactions(["CyberSec"]);
+    SynapticEnhancement.addToFactions(["CyberSec", "Aevum"]);
     if (augmentationExists(AugmentationNames.SynapticEnhancement)) {
         delete Augmentations[AugmentationNames.SynapticEnhancement];
     }
@@ -771,7 +756,7 @@ function initAugmentations() {
              "when working for a company by 20%.",
         company_rep_mult: 1.2,
     });
-    NuoptimalInjectorImplant.addToFactions(["Tian Di Hui", "Volhaven", "New Tokyo", "Chongqing", "Ishima",
+    NuoptimalInjectorImplant.addToFactions(["Tian Di Hui", "Volhaven", "New Tokyo", "Chongqing",
                                            "Clarke Incorporated", "Four Sigma", "Bachman & Associates"]);
     if (augmentationExists(AugmentationNames.NuoptimalInjectorImplant)) {
         delete Augmentations[AugmentationNames.NuoptimalInjectorImplant];
@@ -880,9 +865,7 @@ function initAugmentations() {
         info:"The body is genetically re-engineered so that it produces the ADR-V1 pheromone, " +
              "an artificial pheromone discovered by scientists. The ADR-V1 pheromone, when excreted, " +
              "triggers feelings of admiration and approval in other people.<br><br>" +
-             "This augmentation:<br>" +
-             "Increases the amount of reputation the player gains when working for a company by 10% <br>" +
-             "Increases the amount of reputation the player gains for a faction by 10%.",
+             "This augmentation increases the amount of reputation the player gains when working for a faction or company by 10%.",
         company_rep_mult: 1.1,
         faction_rep_mult: 1.1,
     });
@@ -897,8 +880,7 @@ function initAugmentations() {
         info:"The body is genetically re-engineered so that it produces the ADR-V2 pheromone, " +
              "which is similar to but more potent than ADR-V1. This pheromone, when excreted, " +
              "triggers feelings of admiration, approval, and respect in others.<br><br>" +
-             "This augmentation:<br>" +
-             "Increases the amount of reputation the player gains for a faction and company by 20%.",
+             "This augmentation increases the amount of reputation the player gains when working for a faction or company by 20%.",
         company_rep_mult: 1.2,
         faction_rep_mult: 1.2,
     });
@@ -915,8 +897,7 @@ function initAugmentations() {
               "criminal organizations and allows the user to project and control holographic " +
               "simulacrums within a large radius. These simulacrums are commonly used for " +
               "espionage and surveillance work.<br><br>" +
-              "This augmentation:<br>" +
-              "Increases the amount of reputation the player gains when working for a faction or company by 15%.",
+              "This augmentation increases the amount of reputation the player gains when working for a faction or company by 15%.",
         company_rep_mult: 1.15,
         faction_rep_mult: 1.15,
     });
@@ -1083,7 +1064,7 @@ function initAugmentations() {
         agility_exp_mult: 1.1,
         charisma_exp_mult: 1.1,
     });
-    Neurotrainer1.addToFactions(["CyberSec"]);
+    Neurotrainer1.addToFactions(["CyberSec", "Aevum"]);
     if (augmentationExists(AugmentationNames.Neurotrainer1)) {
         delete Augmentations[AugmentationNames.Neurotrainer1];
     }
@@ -1152,7 +1133,7 @@ function initAugmentations() {
              "cells, when powered, have a negative refractive index. As a result, they bend light " +
              "around the skin, making the user much harder to see from the naked eye.<br><br>" +
              "This augmentation:<br>" +
-             "Increases the player's agility by 5% <br>" +
+             "Increases the player's agility by 5%.<br>" +
              "Increases the amount of money the player gains from crimes by 10%.",
         agility_mult: 1.05,
         crime_money_mult: 1.1,
@@ -1170,8 +1151,8 @@ function initAugmentations() {
              "cells, when powered, are capable of not only bending light but also of bending heat, " +
              "making the user more resilient as well as stealthy.<br><br>" +
              "This augmentation:<br>" +
-             "Increases the player's agility by 10% <br>" +
-             "Increases the player's defense by 10% <br>" +
+             "Increases the player's agility by 10%.<br>" +
+             "Increases the player's defense by 10%.<br>" +
              "Increases the amount of money the player gains from crimes by 25%.",
 	    prereqs:[AugmentationNames.LuminCloaking1],
         agility_mult: 1.1,
@@ -1259,7 +1240,7 @@ function initAugmentations() {
 	// Daedalus
     const RedPill = new Augmentation({
         name:AugmentationNames.TheRedPill, repCost:1e6, moneyCost:0,
-        info:"It's time to leave the cave."
+        info:"It's time to leave the cave.",
     });
     RedPill.addToFactions(["Daedalus"]);
     if (augmentationExists(AugmentationNames.TheRedPill)) {
@@ -1335,7 +1316,7 @@ function initAugmentations() {
              "capable of psychoanalyzing and profiling the personality of " +
              "others using optical imaging software.<br><br>" +
              "This augmentation:<br>" +
-             "Increases the player's charisma by 50%. <br>" +
+             "Increases the player's charisma by 50%.<br>" +
              "Increases the player's charisma experience gain rate by 50%.<br>" +
              "Increases the amount of reputation the player gains for a company by 25%.<br>" +
              "Increases the amount of reputation the player gains for a faction by 25%.",
@@ -1372,7 +1353,7 @@ function initAugmentations() {
         name:AugmentationNames.Xanipher, repCost:350e3, moneyCost:850e6,
         info:"A concoction of advanced nanobots that is orally ingested into the " +
              "body. These nanobots induce physiological change and significantly " +
-             "improve the body's functionining in all aspects.<br><br>" +
+             "improve the body's functioning in all aspects.<br><br>" +
              "This augmentation:<br>" +
              "Increases all of the player's stats by 20%.<br>" +
              "Increases the player's experience gain rate for all stats by 15%.",
@@ -1394,6 +1375,23 @@ function initAugmentations() {
         delete Augmentations[AugmentationNames.Xanipher];
     }
     AddToAugmentations(Xanipher);
+
+    const HydroflameLeftArm = new Augmentation({
+        name:AugmentationNames.HydroflameLeftArm, repCost:500e3, moneyCost:500e9,
+        info:"The left arm of a legendary BitRunner who ascended beyond this world. " +
+             "It projects a light blue energy shield that protects the exposed inner parts. " +
+             "Even though it contains no weapons, the advance tungsten titanium " +
+             "alloy increases the users strength to unbelievable levels.<br><br>" +
+             "This augmentation increases the player's strength by 300%.",
+        strength_mult: 3,
+    });
+    HydroflameLeftArm.addToFactions(["NWO"]);
+    if (augmentationExists(AugmentationNames.HydroflameLeftArm)) {
+        delete Augmentations[AugmentationNames.HydroflameLeftArm];
+    }
+    AddToAugmentations(HydroflameLeftArm);
+
+
 
     // ClarkeIncorporated
     const nextSENS = new Augmentation({
@@ -1537,12 +1535,12 @@ function initAugmentations() {
 	// Sector12
     const CashRoot = new Augmentation({
         name:AugmentationNames.CashRoot, repCost:5e3, moneyCost:25e6,
-        info:"A collection of digital assets saved on a small chip. The chip is implanted " +
-             "into your wrist. A small jack in the chip allows you to connect it to a computer " +
-             "and upload the assets.<br><br>" +
-             "This augmentation:<br>" +
-             "Lets the player start with $1,000,000 after a reset.<br>" +
-             "Lets the player start with the BruteSSH.exe program after a reset."
+        info:<>A collection of digital assets saved on a small chip. The chip is implanted 
+             into your wrist. A small jack in the chip allows you to connect it to a computer 
+             and upload the assets.<br /><br />
+             This augmentation:<br />
+             Lets the player start with {Money(1e6)} after a reset.<br />
+             Lets the player start with the BruteSSH.exe program after a reset.</>,
     });
     CashRoot.addToFactions(["Sector-12"]);
     if (augmentationExists(AugmentationNames.CashRoot)) {
@@ -1557,8 +1555,7 @@ function initAugmentations() {
              "synthesizes glucose, amino acids, and vitamins and redistributes them " +
              "across the body. The device is powered by the body's naturally wasted " +
              "energy in the form of heat.<br><br>" +
-             "This augmentation:<br>" +
-             "Increases the player's experience gain rate for all combat stats by 20%.",
+             "This augmentation increases the player's experience gain rate for all combat stats by 20%.",
         strength_exp_mult: 1.2,
         defense_exp_mult: 1.2,
         dexterity_exp_mult: 1.2,
@@ -1730,7 +1727,7 @@ function initAugmentations() {
                  "to induce wakefulness and concentration, suppress fear, reduce empathy, and " +
                  "improve reflexes and memory-recall among other things.<br><br>" +
                  "This augmentation:<br>" +
-                 "Increases the player's sucess chance in Bladeburner contracts/operations by 3%.<br>" +
+                 "Increases the player's success chance in Bladeburner contracts/operations by 3%.<br>" +
                  "Increases the player's effectiveness in Bladeburner Field Analysis by 5%.<br>" +
                  "Increases the player's Bladeburner stamina gain rate by 2%.",
             bladeburner_success_chance_mult: 1.03,
@@ -1768,8 +1765,7 @@ function initAugmentations() {
                  "nature of the plasma disrupts the electrical systems of Augmentations. However, " +
                  "it can also be effective against non-augmented enemies due to its high temperature " +
                  "and concussive force.<br><br>" +
-                 "This augmentation:<br>" +
-                 "Increases the player's success chance in Bladeburner contracts/operations by 6%.",
+                 "This augmentation increases the player's success chance in Bladeburner contracts/operations by 6%.",
             bladeburner_success_chance_mult: 1.06,
             isSpecial: true,
         });
@@ -1782,8 +1778,7 @@ function initAugmentations() {
                  "is more advanced and powerful than the original V1 model. This V2 model is " +
                  "more power-efficiency, more accurate, and can fire plasma bolts at a much " +
                  "higher velocity than the V1 model.<br><br>" +
-                 "This augmentation:<br>" +
-                 "Increases the player's success chance in Bladeburner contracts/operations by 8%.",
+                 "This augmentation increases the player's success chance in Bladeburner contracts/operations by 8%.",
             prereqs:[AugmentationNames.HyperionV1],
             bladeburner_success_chance_mult: 1.08,
             isSpecial: true,
@@ -1941,8 +1936,7 @@ function initAugmentations() {
             info:"Upgrades the BLADE-51b Tesla Armor with a concentrated deuterium-fluoride laser " +
                  "weapon. It's precision an accuracy makes it useful for quickly neutralizing " +
                  "threats while keeping casualties to a minimum.<br><br>" +
-                 "This augmentation:<br>" +
-                 "Increases the player's success chance in Bladeburner contracts/operations by 8%.",
+                 "This augmentation increases the player's success chance in Bladeburner contracts/operations by 8%.",
             prereqs:[AugmentationNames.BladeArmor],
             bladeburner_success_chance_mult: 1.08,
             isSpecial: true,
@@ -1956,8 +1950,7 @@ function initAugmentations() {
                  "multiple-fiber system. The upgraded weapon uses multiple fiber laser " +
                  "modules that combine together to form a single, more powerful beam of up to " +
                  "2000MW.<br><br>" +
-                 "This augmentation:<br>" +
-                 "Increases the player's success chance in Bladeburner contracts/operations by 10%.",
+                 "This augmentation increases the player's success chance in Bladeburner contracts/operations by 10%.",
             prereqs:[AugmentationNames.BladeArmorUnibeam],
             bladeburner_success_chance_mult: 1.1,
             isSpecial: true,
@@ -2054,7 +2047,7 @@ function applyAugmentation(aug, reapply=false) {
     }
 }
 
-function installAugmentations(cbScript=null) {
+function installAugmentations() {
     if (Player.queuedAugmentations.length == 0) {
         dialogBoxCreate("You have not purchased any Augmentations to install!");
         return false;
@@ -2063,7 +2056,7 @@ function installAugmentations(cbScript=null) {
     for (var i = 0; i < Player.queuedAugmentations.length; ++i) {
         var aug = Augmentations[Player.queuedAugmentations[i].name];
         if (aug == null) {
-            console.log("ERROR. Invalid augmentation");
+            console.error(`Invalid augmentation: ${Player.queuedAugmentations[i].name}`);
             continue;
         }
         applyAugmentation(Player.queuedAugmentations[i]);
@@ -2074,24 +2067,6 @@ function installAugmentations(cbScript=null) {
                     "to install the following Augmentations:<br>" + augmentationList +
                     "<br>You wake up in your home...you feel different...");
     prestigeAugmentation();
-
-    //Run a script after prestiging
-    if (cbScript && isString(cbScript)) {
-        var home = Player.getHomeComputer();
-        for (const script of home.scripts) {
-            if (script.filename === cbScript) {
-                const ramUsage = script.ramUsage;
-                const ramAvailable = home.maxRam - home.ramUsed;
-                if (ramUsage > ramAvailable) {
-                    return; // Not enough RAM
-                }
-                const runningScriptObj = new RunningScript(script, []); // No args
-                runningScriptObj.threads = 1; // Only 1 thread
-
-                startWorkerScript(runningScriptObj, home);
-            }
-        }
-    }
 }
 
 function augmentationExists(name) {
@@ -2107,7 +2082,7 @@ export function displayAugmentationsContent(contentEl) {
             exportGameFn={saveObject.exportGame.bind(saveObject)}
             installAugmentationsFn={installAugmentations}
         />,
-        contentEl
+        contentEl,
     );
 }
 

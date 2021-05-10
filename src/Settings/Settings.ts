@@ -21,9 +21,19 @@ interface IDefaultSettings {
     CodeInstructionRunTime: number;
 
     /**
+     * Render city as list of buttons.
+     */
+    DisableASCIIArt: boolean;
+
+    /**
      * Whether global keyboard shortcuts should be recognized throughout the game.
      */
     DisableHotkeys: boolean;
+    
+    /**
+     * Whether text effects such as corruption should be visible.
+     */
+    DisableTextEffects: boolean;
 
     /**
      * Locale used for display numbers
@@ -101,7 +111,9 @@ interface ISettings extends IDefaultSettings {
 const defaultSettings: IDefaultSettings = {
     AutosaveInterval:                    60,
     CodeInstructionRunTime:              50,
+    DisableASCIIArt:                     false,
     DisableHotkeys:                      false,
+    DisableTextEffects:                  false,
     Locale:                              "en",
     MaxLogCapacity:                      50,
     MaxPortCapacity:                     50,
@@ -119,9 +131,11 @@ const defaultSettings: IDefaultSettings = {
 export const Settings: ISettings & ISelfInitializer & ISelfLoading = {
     AutosaveInterval:                    defaultSettings.AutosaveInterval,
     CodeInstructionRunTime:              25,
+    DisableASCIIArt:                     defaultSettings.DisableASCIIArt,
     DisableHotkeys:                      defaultSettings.DisableHotkeys,
-    Editor:                              EditorSetting.Ace,
-    EditorKeybinding:                    AceKeybindingSetting.Ace,
+    DisableTextEffects:                  defaultSettings.DisableTextEffects,
+    Editor:                              EditorSetting.CodeMirror,
+    EditorKeybinding:                    CodeMirrorKeybindingSetting.Default,
     EditorTheme:                         "Monokai",
     Locale:                              "en",
     MaxLogCapacity:                      defaultSettings.MaxLogCapacity,

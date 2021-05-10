@@ -5,17 +5,27 @@ import {numeralWrapper} from "./numeralFormat";
 
 
 function setSettingsLabels() {
-    var nsExecTime = document.getElementById("settingsNSExecTimeRangeValLabel");
-    var nsLogLimit = document.getElementById("settingsNSLogRangeValLabel");
-    var nsPortLimit = document.getElementById("settingsNSPortRangeValLabel");
-    var suppressMsgs = document.getElementById("settingsSuppressMessages");
-    var suppressFactionInv = document.getElementById("settingsSuppressFactionInvites")
-    var suppressTravelConfirmation = document.getElementById("settingsSuppressTravelConfirmation");
-    var suppressBuyAugmentationConfirmation = document.getElementById("settingsSuppressBuyAugmentationConfirmation");
-    var suppressHospitalizationPopup = document.getElementById("settingsSuppressHospitalizationPopup");
-    var autosaveInterval = document.getElementById("settingsAutosaveIntervalValLabel");
-    var disableHotkeys = document.getElementById("settingsDisableHotkeys");
-    var locale = document.getElementById("settingsLocale");
+    function setAutosaveLabel(elem) {
+        if(Settings.AutosaveInterval === 0) {
+            elem.innerHTML = `disabled`;
+        } else {
+            elem.innerHTML = `every ${Settings.AutosaveInterval}s`;
+        }
+    }
+
+    const nsExecTime = document.getElementById("settingsNSExecTimeRangeValLabel");
+    const nsLogLimit = document.getElementById("settingsNSLogRangeValLabel");
+    const nsPortLimit = document.getElementById("settingsNSPortRangeValLabel");
+    const suppressMsgs = document.getElementById("settingsSuppressMessages");
+    const suppressFactionInv = document.getElementById("settingsSuppressFactionInvites")
+    const suppressTravelConfirmation = document.getElementById("settingsSuppressTravelConfirmation");
+    const suppressBuyAugmentationConfirmation = document.getElementById("settingsSuppressBuyAugmentationConfirmation");
+    const suppressHospitalizationPopup = document.getElementById("settingsSuppressHospitalizationPopup");
+    const autosaveInterval = document.getElementById("settingsAutosaveIntervalValLabel");
+    const disableHotkeys = document.getElementById("settingsDisableHotkeys");
+    const disableASCIIArt = document.getElementById("settingsDisableASCIIArt");
+    const disableTextEffects = document.getElementById("settingsDisableTextEffects");
+    const locale = document.getElementById("settingsLocale");
 
     //Initialize values on labels
     nsExecTime.innerHTML = Settings.CodeInstructionRunTime + "ms";
@@ -26,16 +36,18 @@ function setSettingsLabels() {
     suppressTravelConfirmation.checked = Settings.SuppressTravelConfirmation;
     suppressBuyAugmentationConfirmation.checked = Settings.SuppressBuyAugmentationConfirmation;
     suppressHospitalizationPopup.checked = Settings.SuppressHospitalizationPopup;
-    autosaveInterval.innerHTML = Settings.AutosaveInterval;
+    setAutosaveLabel(autosaveInterval);
     disableHotkeys.checked = Settings.DisableHotkeys;
+    disableASCIIArt.checked = Settings.CityListView;
+    disableTextEffects.checked = Settings.DisableTextEffects;
     locale.value = Settings.Locale;
     numeralWrapper.updateLocale(Settings.Locale); //Initialize locale
 
     //Set handlers for when input changes for sliders
-    var nsExecTimeInput = document.getElementById("settingsNSExecTimeRangeVal");
-    var nsLogRangeInput = document.getElementById("settingsNSLogRangeVal");
-    var nsPortRangeInput = document.getElementById("settingsNSPortRangeVal");
-    var nsAutosaveIntervalInput = document.getElementById("settingsAutosaveIntervalVal");
+    const nsExecTimeInput = document.getElementById("settingsNSExecTimeRangeVal");
+    const nsLogRangeInput = document.getElementById("settingsNSLogRangeVal");
+    const nsPortRangeInput = document.getElementById("settingsNSPortRangeVal");
+    const nsAutosaveIntervalInput = document.getElementById("settingsAutosaveIntervalVal");
     nsExecTimeInput.value = Settings.CodeInstructionRunTime;
     nsLogRangeInput.value = Settings.MaxLogCapacity;
     nsPortRangeInput.value = Settings.MaxPortCapacity;
@@ -57,8 +69,8 @@ function setSettingsLabels() {
     };
 
     nsAutosaveIntervalInput.oninput = function() {
-        autosaveInterval.innerHTML = this.value;
         Settings.AutosaveInterval = Number(this.value);
+        setAutosaveLabel(autosaveInterval)
         if (Number(this.value) === 0) {
             Engine.Counters.autoSaveCounter = Infinity;
         } else {
@@ -89,6 +101,14 @@ function setSettingsLabels() {
 
     disableHotkeys.onclick = function() {
         Settings.DisableHotkeys = this.checked;
+    }
+
+    disableASCIIArt.onclick = function() {
+        Settings.DisableASCIIArt = this.checked;
+    }
+
+    disableTextEffects.onclick = function() {
+        Settings.DisableTextEffects = this.checked;
     }
 
     //Locale selector

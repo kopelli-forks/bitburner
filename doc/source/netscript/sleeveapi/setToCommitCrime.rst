@@ -3,6 +3,8 @@ setToCommitCrime() Netscript Function
 
 .. js:function:: setToCommitCrime(sleeveNumber, name)
 
+    :RAM cost: 4 GB
+
     :param int sleeveNumber: Index of the sleeve to start commiting crime. See :ref:`here <netscript_sleeveapi_referencingaduplicatesleeve>`
     :param string name: Name of the crime. Must be an exact match.
 

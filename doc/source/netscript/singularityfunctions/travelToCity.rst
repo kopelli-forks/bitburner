@@ -3,6 +3,8 @@ travelToCity() Netscript Function
 
 .. js:function:: travelToCity(cityName)
 
+    :RAM cost: 2 GB
+
     :param string cityName:
         City to travel to. CASE-SENSITIVE.
 

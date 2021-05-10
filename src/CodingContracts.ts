@@ -2,7 +2,7 @@ import {
     codingContractTypesMetadata,
     DescriptionFunc,
     GeneratorFunc,
-    SolverFunc
+    SolverFunc,
 } from "./data/codingcontracttypes";
 
 import { IMap } from "./types";
@@ -10,12 +10,14 @@ import { IMap } from "./types";
 import {
     Generic_fromJSON,
     Generic_toJSON,
-    Reviver
+    Reviver,
 } from "../utils/JSONReviver";
 import { KEY } from "../utils/helpers/keyCodes";
 import { createElement } from "../utils/uiHelpers/createElement";
-import { createPopup } from "../utils/uiHelpers/createPopup";
+import { createPopup, removePopup } from "./ui/React/createPopup";
 import { removeElementById } from "../utils/uiHelpers/removeElementById";
+import { CodingContractPopup } from "./ui/React/CodingContractPopup";
+
 
 /* tslint:disable:no-magic-numbers completed-docs max-classes-per-file no-console */
 
@@ -74,7 +76,6 @@ for (const md of codingContractTypesMetadata) {
     // tslint:disable-next-line
     CodingContractTypes[md.name] = new CodingContractType(md.name, md.desc, md.gen, md.solver, md.difficulty, md.numTries);
 }
-console.info(`${Object.keys(CodingContractTypes).length} Coding Contract Types loaded`);
 
 /**
  * Enum representing the different types of rewards a Coding Contract can give
@@ -109,12 +110,6 @@ export interface ICodingContractReward {
  * The player receives a reward if the problem is solved correctly
  */
 export class CodingContract {
-    /**
-     * Initiatizes a CodingContract from a JSON save state.
-     */
-    static fromJSON(value: any): CodingContract {
-        return Generic_fromJSON(CodingContract, value.data);
-    }
 
     /* Relevant data for the contract's problem */
     data: any;
@@ -127,13 +122,13 @@ export class CodingContract {
     reward: ICodingContractReward | null;
 
     /* Number of times the Contract has been attempted */
-    tries: number = 0;
+    tries = 0;
 
     /* String representing the contract's type. Must match type in ContractTypes */
     type: string;
 
-    constructor(fn: string = "",
-                type: string = "Find Largest Prime Factor",
+    constructor(fn = "",
+                type = "Find Largest Prime Factor",
                 reward: ICodingContractReward | null = null) {
         this.fn = fn;
         if (!this.fn.endsWith(".cct")) {
@@ -178,56 +173,26 @@ export class CodingContract {
      * Creates a popup to prompt the player to solve the problem
      */
     async prompt(): Promise<CodingContractResult> {
-        // tslint:disable-next-line
-        return new Promise<CodingContractResult>((resolve: Function, reject: Function) => {
-            const contractType: CodingContractType = CodingContractTypes[this.type];
-            const popupId: string = `coding-contract-prompt-popup-${this.fn}`;
-            const txt: HTMLElement = createElement("p", {
-                innerHTML: ["You are attempting to solve a Coding Contract. You have",
-                            `${this.getMaxNumTries() - this.tries} tries remaining,`,
-                            "after which the contract will self-destruct.<br><br>",
-                            `${contractType.desc(this.data).replace(/\n/g, "<br>")}`].join(" "),
-            });
-            let answerInput: HTMLInputElement;
-            let solveBtn: HTMLElement;
-            let cancelBtn: HTMLElement;
-            answerInput = createElement("input", {
-                onkeydown: (e: any) => {
-                    if (e.keyCode === KEY.ENTER && answerInput.value !== "") {
-                        e.preventDefault();
-                        solveBtn.click();
-                    } else if (e.keyCode === KEY.ESC) {
-                        e.preventDefault();
-                        cancelBtn.click();
-                    }
+        const popupId = `coding-contract-prompt-popup-${this.fn}`;
+        return new Promise<CodingContractResult>((resolve, reject) => {
+            let popup = new CodingContractPopup({
+                c: this,
+                popupId: popupId,
+                onClose: () => {
+                    resolve(CodingContractResult.Cancelled);
+                    removePopup(popupId);
                 },
-                placeholder: "Enter Solution here",
-                width: "50%",
-            }) as HTMLInputElement;
-            solveBtn = createElement("a", {
-                class: "a-link-button",
-                clickListener: () => {
-                    const answer: string = answerInput.value;
-                    if (this.isSolution(answer)) {
+                onAttempt: (val: string) => {
+                    console.log(`top; ${val}`);
+                    if (this.isSolution(val)) {
                         resolve(CodingContractResult.Success);
                     } else {
                         resolve(CodingContractResult.Failure);
                     }
-                    removeElementById(popupId);
-                },
-                innerText: "Solve",
+                    removePopup(popupId);
+                }
             });
-            cancelBtn = createElement("a", {
-                class: "a-link-button",
-                clickListener: () => {
-                    resolve(CodingContractResult.Cancelled);
-                    removeElementById(popupId);
-                },
-                innerText: "Cancel",
-            });
-            const lineBreak: HTMLElement = createElement("br");
-            createPopup(popupId, [txt, lineBreak, lineBreak, answerInput, solveBtn, cancelBtn]);
-            answerInput.focus();
+            createPopup(popupId, CodingContractPopup, popup.props);
         });
     }
 
@@ -236,6 +201,14 @@ export class CodingContract {
      */
     toJSON(): any {
         return Generic_toJSON("CodingContract", this);
+    }
+
+    /**
+     * Initiatizes a CodingContract from a JSON save state.
+     */
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+    static fromJSON(value: any): CodingContract {
+        return Generic_fromJSON(CodingContract, value.data);
     }
 }
 

@@ -10,45 +10,43 @@ export class CharacterOverviewComponent extends Component {
     render() {
         const intelligence = (
             <tr id="character-int-wrapper">
-                <td>Int:&nbsp;</td><td id="character-int-text" className="character-stat-cell">{(Player.intelligence).toLocaleString()}</td>
+                <td className="character-int-cell">Int:&nbsp;</td><td id="character-int-text" className="character-int-cell character-stat-cell">{numeralWrapper.formatSkill(Player.intelligence)}</td>
             </tr>
         );
 
         return (
-            <div id="character-overview-text">
-                <table>
+            <table>
                 <tbody>
                     <tr id="character-hp-wrapper">
-                        <td>Hp:</td><td id="character-hp-text" className="character-stat-cell">{Player.hp + " / " + Player.max_hp}</td>
+                        <td className="character-hp-cell">Hp:</td><td id="character-hp-text" className="character-hp-cell character-stat-cell">{numeralWrapper.formatHp(Player.hp) + " / " + numeralWrapper.formatHp(Player.max_hp)}</td>
                     </tr>
                     <tr id="character-money-wrapper">
-                        <td>Money:&nbsp;</td><td id="character-money-text" className="character-stat-cell">{numeralWrapper.format(Player.money.toNumber(), '$0.000a')}</td>
+                        <td className="character-money-cell">Money:&nbsp;</td><td id="character-money-text" className="character-money-cell character-stat-cell">{numeralWrapper.formatMoney(Player.money.toNumber())}</td>
                     </tr>
                     <tr id="character-hack-wrapper">
-                        <td>Hack:&nbsp;</td><td id="character-hack-text" className="character-stat-cell">{(Player.hacking_skill).toLocaleString()}</td>
+                        <td className="character-hack-cell">Hack:&nbsp;</td><td id="character-hack-text" className="character-hack-cell character-stat-cell">{numeralWrapper.formatSkill(Player.hacking_skill)}</td>
                     </tr>
                     <tr id="character-str-wrapper">
-                        <td>Str:&nbsp;</td><td id="character-str-text" className="character-stat-cell">{(Player.strength).toLocaleString()}</td>
+                        <td className="character-combat-cell">Str:&nbsp;</td><td id="character-str-text" className="character-combat-cell character-stat-cell">{numeralWrapper.formatSkill(Player.strength)}</td>
                     </tr>
                     <tr id="character-def-wrapper">
-                        <td>Def:&nbsp;</td><td id="character-def-text" className="character-stat-cell">{(Player.defense).toLocaleString()}</td>
+                        <td className="character-combat-cell">Def:&nbsp;</td><td id="character-def-text" className="character-combat-cell character-stat-cell">{numeralWrapper.formatSkill(Player.defense)}</td>
                     </tr>
                     <tr id="character-dex-wrapper">
-                        <td>Dex:&nbsp;</td><td id="character-dex-text" className="character-stat-cell">{(Player.dexterity).toLocaleString()}</td>
+                        <td className="character-combat-cell">Dex:&nbsp;</td><td id="character-dex-text" className="character-combat-cell character-stat-cell">{numeralWrapper.formatSkill(Player.dexterity)}</td>
                     </tr>
                     <tr id="character-agi-wrapper">
-                        <td>Agi:&nbsp;</td><td id="character-agi-text" className="character-stat-cell">{(Player.agility).toLocaleString()}</td>
+                        <td className="character-combat-cell">Agi:&nbsp;</td><td id="character-agi-text" className="character-combat-cell character-stat-cell">{numeralWrapper.formatSkill(Player.agility)}</td>
                     </tr>
                     <tr id="character-cha-wrapper">
-                        <td>Cha:&nbsp;</td><td id="character-cha-text" className="character-stat-cell">{(Player.charisma).toLocaleString()}</td>
+                        <td className="character-cha-cell">Cha:&nbsp;</td><td id="character-cha-text" className="character-cha-cell character-stat-cell">{numeralWrapper.formatSkill(Player.charisma)}</td>
                     </tr>
                     {
                         Player.intelligence >= 1 &&
                         intelligence
                     }
                  </tbody>
-                </table>
-            </div>
+            </table>
         )
     }
 }

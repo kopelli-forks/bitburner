@@ -15,21 +15,21 @@ import { Factions } from "./Factions";
 import { HackingMission, setInMission } from "../Missions";
 import { Player } from "../Player";
 import { Settings } from "../Settings/Settings";
+import { 
+    getHackingWorkRepGain,
+    getFactionSecurityWorkRepGain,
+    getFactionFieldWorkRepGain,
+} from "../PersonObjects/formulas/reputation";
 
 import { Page, routing } from "../ui/navigationTracking";
 import { dialogBoxCreate } from "../../utils/DialogBox";
 import { factionInvitationBoxCreate } from "../../utils/FactionInvitationBox";
-import {
-    Reviver,
-    Generic_toJSON,
-    Generic_fromJSON
-} from "../../utils/JSONReviver";
-import { formatNumber } from "../../utils/StringHelperFunctions";
+import { Money } from "../ui/React/Money";
 import {
     yesNoBoxCreate,
     yesNoBoxGetYesButton,
     yesNoBoxGetNoButton,
-    yesNoBoxClose
+    yesNoBoxClose,
 } from "../../utils/YesNoBox";
 
 export function inviteToFaction(faction) {
@@ -54,6 +54,12 @@ export function joinFaction(faction) {
         const enemy = factionInfo.enemies[i];
         if (Factions[enemy] instanceof Faction) {
             Factions[enemy].isBanned = true;
+        }
+    }
+    for (var i = 0; i < Player.factionInvitations.length; ++i) {
+        if (Player.factionInvitations[i] == faction.name || Factions[Player.factionInvitations[i]].isBanned) {
+            Player.factionInvitations.splice(i, 1);
+            i--;
         }
     }
 }
@@ -83,7 +89,7 @@ export function displayFactionContent(factionName, initiallyOnAugmentationsPage=
             p={Player}
             startHackingMissionFn={startHackingMission}
         />,
-        Engine.Display.factionContent
+        Engine.Display.factionContent,
     )
 }
 
@@ -108,10 +114,12 @@ export function purchaseAugmentationBoxCreate(aug, fac) {
         yesNoBoxClose();
     });
 
-    yesNoBoxCreate("<h2>" + aug.name + "</h2><br>" +
-                   aug.info + "<br><br>" +
-                   "<br>Would you like to purchase the " + aug.name + " Augmentation for $" +
-                   formatNumber(aug.baseCost * factionInfo.augmentationPriceMult, 2)  + "?");
+    yesNoBoxCreate(<>
+        <h2>{aug.name}</h2><br />
+<div dangerouslySetInnerHTML={{__html: aug.info}}></div><br /><br />
+<br />Would you like to purchase the {aug.name} Augmentation for&nbsp;
+{Money(aug.baseCost * factionInfo.augmentationPriceMult)}?
+    </>);
 }
 
 //Returns a boolean indicating whether the player has the prerequisites for the
@@ -231,15 +239,29 @@ export function getNextNeurofluxLevel() {
 }
 
 export function processPassiveFactionRepGain(numCycles) {
-    var numTimesGain = (numCycles / 600) * Player.faction_rep_mult;
-    for (var name in Factions) {
-		if (Factions.hasOwnProperty(name)) {
-			var faction = Factions[name];
+    for (const name in Factions) {
+        if (name === Player.currentWorkFactionName) continue;
+        if (!Factions.hasOwnProperty(name)) continue;
+        const faction = Factions[name];
+        if (!faction.isMember) continue;
+        // No passive rep for special factions
+        const info = faction.getInfo();
+        if(!info.offersWork()) continue;
+        // No passive rep for gangs.
+        if(Player.getGangName() === name) continue;
+        // 0 favor = 1%/s
+        // 50 favor = 6%/s
+        // 100 favor = 11%/s
+        const favorMult = Math.min(0.1, (faction.favor / 1000) + 0.01);
+        // Find the best of all possible favor gain, minimum 1 rep / 2 minute.
+        const hRep = getHackingWorkRepGain(Player, faction);
+        const sRep = getFactionSecurityWorkRepGain(Player, faction);
+        const fRep = getFactionFieldWorkRepGain(Player, faction);
+        const rate = Math.max(hRep * favorMult, sRep * favorMult, fRep * favorMult, 1/120);
 
-			//TODO Get hard value of 1 rep per "rep gain cycle"" for now..
-            //maybe later make this based on
-            //a player's 'status' like how powerful they are and how much money they have
-            if (faction.isMember) {faction.playerReputation += (numTimesGain * BitNodeMultipliers.FactionPassiveRepGain);}
-		}
-	}
+        faction.playerReputation += rate *
+            (numCycles) *
+            Player.faction_rep_mult *
+            BitNodeMultipliers.FactionPassiveRepGain;
+    }
 }

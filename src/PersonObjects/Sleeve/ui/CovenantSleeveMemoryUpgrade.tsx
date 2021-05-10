@@ -9,6 +9,7 @@ import { IPlayer } from "../../IPlayer";
 
 import { numeralWrapper } from "../../../ui/numeralFormat";
 import { StdButton } from "../../../ui/React/StdButton";
+import { Money } from "../../../ui/React/Money";
 
 interface IProps {
     index: number;
@@ -34,7 +35,11 @@ export class CovenantSleeveMemoryUpgrade extends React.Component<IProps, IState>
     }
 
     changePurchaseAmount(e: React.ChangeEvent<HTMLInputElement>): void {
-        const n: number = parseInt(e.target.value);
+        let n: number = parseInt(e.target.value);
+
+        if(isNaN(n)) n = 1;
+        const maxMemory = 100 - this.props.sleeve.memory;
+        if (n > maxMemory) n = maxMemory;
 
         this.setState({
             amt: n,
@@ -59,7 +64,7 @@ export class CovenantSleeveMemoryUpgrade extends React.Component<IProps, IState>
         }
     }
 
-    render() {
+    render(): React.ReactNode {
         const inputId = `sleeve-${this.props.index}-memory-upgrade-input`;
 
         // Memory cannot go above 100
@@ -68,13 +73,13 @@ export class CovenantSleeveMemoryUpgrade extends React.Component<IProps, IState>
         // Purchase button props
         const cost = this.getPurchaseCost();
         const purchaseBtnDisabled = !this.props.p.canAfford(cost);
-        let purchaseBtnText;
+        let purchaseBtnContent;
         if (isNaN(this.state.amt)) {
-            purchaseBtnText = "Invalid value";
+            purchaseBtnContent = <>Invalid value</>;
         } else if (this.state.amt > maxMemory) {
-            purchaseBtnText = `Memory cannot exceed 100`;
+            purchaseBtnContent = <>Memory cannot exceed 100?</>;
         } else {
-            purchaseBtnText = `Purchase ${this.state.amt} memory - ${numeralWrapper.formatMoney(cost)}`;
+            purchaseBtnContent = <>Purchase {this.state.amt} memory - {Money(cost)}?</>;
         }
 
         return (
@@ -82,15 +87,15 @@ export class CovenantSleeveMemoryUpgrade extends React.Component<IProps, IState>
                 <h2><u>Upgrade Memory</u></h2>
                 <p>
                     Purchase a memory upgrade for your sleeve. Note that a sleeve's max memory
-                    is 100 (current: {numeralWrapper.format(this.props.sleeve.memory, "0")})
+                    is 100 (current: {numeralWrapper.formatSleeveMemory(this.props.sleeve.memory)})
                 </p>
 
                 <label htmlFor={inputId}>
                     Amount of memory to purchase (must be an integer):
                 </label>
-                <input id={inputId} onChange={this.changePurchaseAmount} type={"number"} value={isNaN(this.state.amt) ? this.state.amt.toString() : this.state.amt} />
+                <input className="text-input" id={inputId} onChange={this.changePurchaseAmount} type={"number"} value={this.state.amt} />
                 <br />
-                <StdButton disabled={purchaseBtnDisabled} onClick={this.purchaseMemory} text={purchaseBtnText} />
+                <StdButton disabled={purchaseBtnDisabled} onClick={this.purchaseMemory} text={purchaseBtnContent} />
             </div>
         )
     }

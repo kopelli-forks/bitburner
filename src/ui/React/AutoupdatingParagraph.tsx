@@ -7,24 +7,20 @@ import * as React from "react";
 
 interface IProps {
     intervalTime?: number;
-    style?: object;
-    getText: () => string;
-    getTooltip?: () => string;
+    style?: any;
+    getContent: () => JSX.Element;
+    getTooltip?: () => JSX.Element;
 }
 
 interface IState {
     i: number;
 }
 
-type IInnerHTMLMarkup = {
-    __html: string;
-}
-
 export class AutoupdatingParagraph extends React.Component<IProps, IState> {
     /**
      *  Timer ID for auto-updating implementation (returned value from setInterval())
      */
-    interval: number = 0;
+    interval = 0;
 
     constructor(props: IProps) {
         super(props);
@@ -33,47 +29,40 @@ export class AutoupdatingParagraph extends React.Component<IProps, IState> {
         }
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         const time = this.props.intervalTime ? this.props.intervalTime : 1000;
         this.interval = setInterval(() => this.tick(), time);
     }
 
-    componentWillUnmount() {
+    componentWillUnmount(): void {
         clearInterval(this.interval);
     }
 
-    tick() {
+    tick(): void {
         this.setState(prevState => ({
-            i: prevState.i + 1
+            i: prevState.i + 1,
         }));
     }
 
-    render() {
-        let hasTooltip = this.props.getTooltip != null;
-        let tooltip: string | null;
-        if (hasTooltip) {
-            tooltip = this.props.getTooltip!();
-            if (tooltip === "") {
-                hasTooltip = false;
-            }
+    hasTooltip(): boolean {
+        if (this.props.getTooltip != null) {
+            return !!this.props.getTooltip()
         }
+        return true;
+    }
 
-        const className = "tooltip";
+    tooltip(): JSX.Element {
+        if(!this.props.getTooltip) return <></>;
+        return this.props.getTooltip();
+    }
 
-        // Tooltip will be set using inner HTML
-        let tooltipMarkup: IInnerHTMLMarkup | null;
-        if (hasTooltip) {
-            tooltipMarkup = {
-                __html: tooltip!
-            }
-        }
-
+    render(): React.ReactNode {
         return (
-            <p className={className} style={this.props.style}>
-                {this.props.getText()}
+            <p className="tooltip" style={this.props.style}>
+                {this.props.getContent()}
                 {
-                    hasTooltip &&
-                    <span className={"tooltiptext"} dangerouslySetInnerHTML={tooltipMarkup!}></span>
+                    this.hasTooltip() &&
+                    <span className={"tooltiptext"}>{this.tooltip()}</span>
                 }
             </p>
         )
